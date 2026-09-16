@@ -6,29 +6,20 @@ echo ========================================================
 echo   SO'ROVNOMA PORTALINI GITHUB'GA YUKLASH
 echo ========================================================
 echo.
-set /p REPO_URL="GitHub repozitoriy havolasini kiriting (masalan: https://github.com/username/sorovnoma-portal.git): "
-
-if "%REPO_URL%"=="" (
-    echo Xatolik: Havola kiritilmadi!
-    pause
-    exit /b
-)
-
+echo Repozitoriy: https://github.com/muhiddinovakobir279-maker/sorovnoma35maktab.git
 echo.
-echo Repozitoriy ulanmoqda...
-git remote remove origin 2>nul
-git remote add origin %REPO_URL%
-git branch -M main
-echo Fayllar yuklanmoqda (Push)...
+echo Fayllar yuklanmoqda...
 git push -u origin main
 
 if %ERRORLEVEL% equ 0 (
     echo.
     echo ========================================================
-    echo   TABRIKLAYMIZ! FAYLLAR GITHUB'GA YUKLANDI!
+    echo   TABRIKLAYMIZ! FAYLLAR GITHUB'GA MUVAFFAQIYATLI YUKLANDI!
     echo ========================================================
 ) else (
     echo.
-    echo Yuklashda xatolik yuz berdi. GitHub'ga kirganingizni tekshiring.
+    echo [ESLATMA] Agar brauzerda "Sign in to GitHub" oynasi ochilgan bo'lsa,
+    echo unda "Authorize" tugmasini bosing va qaytadan ushbu faylni ishga tushiring.
 )
+echo.
 pause
