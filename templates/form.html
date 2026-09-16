@@ -65,14 +65,34 @@
                             Sinfingiz <span class="text-red-500">*</span>
                         </label>
                         <select id="formSinf" required class="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
-                            <option value="">Tanlang...</option>
-                            <option value="5-sinf">5-sinf</option>
-                            <option value="6-sinf">6-sinf</option>
-                            <option value="7-sinf">7-sinf</option>
-                            <option value="8-sinf">8-sinf</option>
-                            <option value="9-sinf">9-sinf</option>
-                            <option value="10-sinf">10-sinf</option>
-                            <option value="11-sinf">11-sinf</option>
+                            <option value="">Sinfingizni tanlang...</option>
+                            <optgroup label="5-sinflar">
+                                <option value="5-A">5-A</option><option value="5-B">5-B</option><option value="5-V">5-V</option><option value="5-G">5-G</option><option value="5-D">5-D</option><option value="5-O">5-O</option><option value="5-Ye">5-Ye</option><option value="5-I">5-I</option><option value="5-Z">5-Z</option>
+                            </optgroup>
+                            <optgroup label="6-sinflar">
+                                <option value="6-A">6-A</option><option value="6-B">6-B</option><option value="6-V">6-V</option><option value="6-G">6-G</option><option value="6-D">6-D</option><option value="6-Ye">6-Ye</option>
+                            </optgroup>
+                            <optgroup label="7-sinflar">
+                                <option value="7-A">7-A</option><option value="7-B">7-B</option><option value="7-V">7-V</option><option value="7-G">7-G</option><option value="7-D">7-D</option><option value="7-Ye">7-Ye</option><option value="7-O">7-O</option>
+                            </optgroup>
+                            <optgroup label="8-sinflar">
+                                <option value="8-A">8-A</option><option value="8-B">8-B</option><option value="8-V">8-V</option><option value="8-G">8-G</option><option value="8-D">8-D</option><option value="8-I">8-I</option><option value="8-Yo">8-Yo</option><option value="8-J">8-J</option><option value="8-Ye">8-Ye</option>
+                            </optgroup>
+                            <optgroup label="9-sinflar">
+                                <option value="9-A">9-A</option><option value="9-B">9-B</option><option value="9-V">9-V</option><option value="9-G">9-G</option><option value="9-D">9-D</option><option value="9-O">9-O</option><option value="9-Y">9-Y</option><option value="9-Ye">9-Ye</option><option value="9-I">9-I</option>
+                            </optgroup>
+                            <optgroup label="10-sinflar">
+                                <option value="10-A">10-A</option><option value="10-B">10-B</option><option value="10-V">10-V</option><option value="10-G">10-G</option><option value="10-D">10-D</option><option value="10-Yo">10-Yo</option>
+                            </optgroup>
+                            <optgroup label="11-sinflar">
+                                <option value="11-A">11-A</option><option value="11-B">11-B</option><option value="11-V">11-V</option><option value="11-G">11-G</option><option value="11-D">11-D</option><option value="11-I">11-I</option>
+                            </optgroup>
+                            <optgroup label="Boshlang'ich (1-4 sinflar)">
+                                <option value="1-A">1-A</option><option value="1-B">1-B</option><option value="1-V">1-V</option><option value="1-G">1-G</option><option value="1-D">1-D</option><option value="1-Ye">1-Ye</option><option value="1-O">1-O</option><option value="1-I">1-I</option><option value="1-Z">1-Z</option>
+                                <option value="2-A">2-A</option><option value="2-B">2-B</option><option value="2-V">2-V</option><option value="2-G">2-G</option><option value="2-D">2-D</option><option value="2-I">2-I</option><option value="2-Ye">2-Ye</option><option value="2-O">2-O</option>
+                                <option value="3-A">3-A</option><option value="3-B">3-B</option><option value="3-V">3-V</option><option value="3-D">3-D</option><option value="3-G">3-G</option><option value="3-I">3-I</option><option value="3-Z">3-Z</option><option value="3-Ye">3-Ye</option>
+                                <option value="4-A">4-A</option><option value="4-B">4-B</option><option value="4-V">4-V</option><option value="4-G">4-G</option><option value="4-D">4-D</option><option value="4-Ye">4-Ye</option><option value="4-J">4-J</option><option value="4-Z">4-Z</option>
+                            </optgroup>
                         </select>
                     </div>
                 </div>
@@ -218,6 +238,22 @@
 {% block scripts %}
 <script>
     let currentLang = 'uz';
+
+    const SCHOOL_CLASSES = [
+        { labelUz: "5-sinflar", labelRu: "5-классы", items: ["5-A", "5-B", "5-V", "5-G", "5-D", "5-O", "5-Ye", "5-I", "5-Z"] },
+        { labelUz: "6-sinflar", labelRu: "6-классы", items: ["6-A", "6-B", "6-V", "6-G", "6-D", "6-Ye"] },
+        { labelUz: "7-sinflar", labelRu: "7-классы", items: ["7-A", "7-B", "7-V", "7-G", "7-D", "7-Ye", "7-O"] },
+        { labelUz: "8-sinflar", labelRu: "8-классы", items: ["8-A", "8-B", "8-V", "8-G", "8-D", "8-I", "8-Yo", "8-J", "8-Ye"] },
+        { labelUz: "9-sinflar", labelRu: "9-классы", items: ["9-A", "9-B", "9-V", "9-G", "9-D", "9-O", "9-Y", "9-Ye", "9-I"] },
+        { labelUz: "10-sinflar", labelRu: "10-классы", items: ["10-A", "10-B", "10-V", "10-G", "10-D", "10-Yo"] },
+        { labelUz: "11-sinflar", labelRu: "11-классы", items: ["11-A", "11-B", "11-V", "11-G", "11-D", "11-I"] },
+        { labelUz: "Boshlang'ich (1-4 sinflar)", labelRu: "Начальные (1-4 классы)", items: [
+            "1-A", "1-B", "1-V", "1-G", "1-D", "1-Ye", "1-O", "1-I", "1-Z",
+            "2-A", "2-B", "2-V", "2-G", "2-D", "2-I", "2-Ye", "2-O",
+            "3-A", "3-B", "3-V", "3-D", "3-G", "3-I", "3-Z", "3-Ye",
+            "4-A", "4-B", "4-V", "4-G", "4-D", "4-Ye", "4-J", "4-Z"
+        ]}
+    ];
 
     const LANG_DATA = {
         uz: {
@@ -389,9 +425,17 @@
         // Sinf options
         const sinfSelect = document.getElementById('formSinf');
         const currentSinfVal = sinfSelect.value;
-        sinfSelect.innerHTML = `<option value="">Tanlang / Выберите...</option>` +
-            d.sinfOptions.map(s => `<option value="${s}">${s}</option>`).join('');
-        if (d.sinfOptions.includes(currentSinfVal)) sinfSelect.value = currentSinfVal;
+        let sinfHtml = `<option value="">${currentLang === 'ru' ? 'Выберите класс...' : 'Sinfingizni tanlang...'}</option>`;
+        SCHOOL_CLASSES.forEach(g => {
+            const groupLabel = currentLang === 'ru' ? g.labelRu : g.labelUz;
+            sinfHtml += `<optgroup label="${groupLabel}">`;
+            g.items.forEach(c => {
+                sinfHtml += `<option value="${c}">${c}</option>`;
+            });
+            sinfHtml += `</optgroup>`;
+        });
+        sinfSelect.innerHTML = sinfHtml;
+        if (currentSinfVal) sinfSelect.value = currentSinfVal;
 
         // Fanlar
         document.getElementById('section2Title').textContent = d.section2Title;
