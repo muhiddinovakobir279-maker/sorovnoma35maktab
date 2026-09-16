@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Tahlil va Statistika - Sorovnoma Natijalari{% endblock %}
+
+{% block head %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    
+    <!-- Page Header -->
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
+                <i data-lucide="bar-chart-3" class="w-7 h-7 text-emerald-600"></i>
+                So'rovnoma Tahlili va Statistikasi
+            </h1>
+            <p class="text-sm text-gray-500 mt-1">Kiritilgan ma'lumotlar asosida avtomatik shakllanadigan grafiklar va hisobotlar</p>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <button onclick="loadStats()" class="px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium shadow-sm flex items-center space-x-1.5 transition-all">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                <span>Yangilash</span>
+            </button>
+            <a href="/" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow-sm flex items-center space-x-1.5 transition-all">
+                <i data-lucide="table" class="w-4 h-4"></i>
+                <span>Jadvalga qaytish</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <!-- Card 1: Total -->
+        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                <i data-lucide="users" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Jami O'quvchilar</span>
+                <h3 id="statTotal" class="text-2xl font-extrabold text-gray-900 mt-0.5">0</h3>
+            </div>
+        </div>
+
+        <!-- Card 2: Top Profession -->
+        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                <i data-lucide="briefcase" class="w-6 h-6"></i>
+            </div>
+            <div class="overflow-hidden">
+                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Top Kasb</span>
+                <h3 id="statTopKasb" class="text-base font-bold text-gray-900 mt-0.5 truncate" title="-">-</h3>
+            </div>
+        </div>
+
+        <!-- Card 3: Top New Club -->
+        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+                <i data-lucide="sparkles" class="w-6 h-6"></i>
+            </div>
+            <div class="overflow-hidden">
+                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Eng Talabgir To'garak</span>
+                <h3 id="statTopTogarak" class="text-base font-bold text-gray-900 mt-0.5 truncate" title="-">-</h3>
+            </div>
+        </div>
+
+        <!-- Card 4: Top Class -->
+        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                <i data-lucide="graduation-cap" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Eng Faol Sinf</span>
+                <h3 id="statTopSinf" class="text-base font-bold text-gray-900 mt-0.5">-</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State for Stats -->
+    <div id="statsEmptyNotice" class="hidden bg-white rounded-2xl p-10 text-center border border-gray-200 shadow-sm mb-8">
+        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400">
+            <i data-lucide="pie-chart" class="w-8 h-8"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-800 mb-1">Hozircha ma'lumotlar mavjud emas</h3>
+        <p class="text-sm text-gray-500 max-w-md mx-auto mb-4">
+            Baza hozircha bo'sh bo'lgani uchun statistik grafiklar ko'rsatilmaydi. So'rovnoma orqali birinchi ma'lumotlar kiritilgach, diagrammalar avtomatik shakllanadi!
+        </p>
+        <a href="/sorovnoma" class="inline-flex items-center space-x-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-all">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>So'rovnoma to'ldirish</span>
+        </a>
+    </div>
+
+    <!-- Charts Grid -->
+    <div id="chartsContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Chart 1: Top Kasblar -->
+        <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+            <h3 class="text-base font-bold text-gray-800 mb-1 flex items-center gap-2">
+                <i data-lucide="award" class="w-5 h-5 text-emerald-600"></i>
+                Eng Ko'p Tanlangan Kelajak Kasblari (Top 10)
+            </h3>
+            <p class="text-xs text-gray-400 mb-4">O'quvchilar kelajakda tanlamoqchi bo'lgan sohalar</p>
+            <div class="h-72">
+                <canvas id="chartKasblar"></canvas>
+            </div>
+        </div>
+
+        <!-- Chart 2: Yangi To'garaklar Taklifi -->
+        <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+            <h3 class="text-base font-bold text-gray-800 mb-1 flex items-center gap-2">
+                <i data-lucide="lightbulb" class="w-5 h-5 text-amber-500"></i>
+                Yangi Ochilishi Kutilayotgan To'garaklar Taklifi
+            </h3>
+            <p class="text-xs text-gray-400 mb-4">O'quvchilar tomonidan eng ko'p so'ralgan yangi to'garaklar</p>
+            <div class="h-72">
+                <canvas id="chartYangiTogaraklar"></canvas>
+            </div>
+        </div>
+
+        <!-- Chart 3: Sinflar Kesimi -->
+        <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+            <h3 class="text-base font-bold text-gray-800 mb-1 flex items-center gap-2">
+                <i data-lucide="pie-chart" class="w-5 h-5 text-blue-600"></i>
+                Sinflar Kesimida O'quvchilar Taqsimoti
+            </h3>
+            <p class="text-xs text-gray-400 mb-4">So'rovnomada qatnashgan sinflar ulushi</p>
+            <div class="h-72 flex items-center justify-center">
+                <canvas id="chartSinflar"></canvas>
+            </div>
+        </div>
+
+        <!-- Chart 4: Iqtidor Sohalari -->
+        <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+            <h3 class="text-base font-bold text-gray-800 mb-1 flex items-center gap-2">
+                <i data-lucide="compass" class="w-5 h-5 text-purple-600"></i>
+                Iqtidor va Qobiliyat Sohalari
+            </h3>
+            <p class="text-xs text-gray-400 mb-4">O'quvchilar o'zlarini kuchli deb hisoblaydigan yo'nalishlar</p>
+            <div class="h-72 flex items-center justify-center">
+                <canvas id="chartIqtidor"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let chartInstances = {};
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadStats();
+    });
+
+    async function loadStats() {
+        try {
+            const res = await fetch('/api/stats');
+            const data = await res.json();
+            renderStats(data);
+        } catch (err) {
+            console.error("Statistika yuklashda xatolik:", err);
+            showToast("Statistikani yuklab bo'lmadi", "error");
+        }
+    }
+
+    function renderStats(data) {
+        document.getElementById('statTotal').textContent = data.total || 0;
+
+        const notice = document.getElementById('statsEmptyNotice');
+        const container = document.getElementById('chartsContainer');
+
+        if (!data.total || data.total === 0) {
+            notice.classList.remove('hidden');
+            container.classList.add('hidden');
+            document.getElementById('statTopKasb').textContent = 'Hozircha yo\'q';
+            document.getElementById('statTopTogarak').textContent = 'Hozircha yo\'q';
+            document.getElementById('statTopSinf').textContent = 'Hozircha yo\'q';
+            return;
+        }
+
+        notice.classList.add('hidden');
+        container.classList.remove('hidden');
+
+        // Top labels
+        if (data.top_kasblar && data.top_kasblar.length > 0) {
+            document.getElementById('statTopKasb').textContent = `${data.top_kasblar[0][0]} (${data.top_kasblar[0][1]})`;
+        }
+        if (data.top_yangi_togaraklar && data.top_yangi_togaraklar.length > 0) {
+            document.getElementById('statTopTogarak').textContent = `${data.top_yangi_togaraklar[0][0]} (${data.top_yangi_togaraklar[0][1]})`;
+        }
+        if (data.sinflar && Object.keys(data.sinflar).length > 0) {
+            const topSinfEntry = Object.entries(data.sinflar).sort((a,b) => b[1] - a[1])[0];
+            document.getElementById('statTopSinf').textContent = `${topSinfEntry[0]} (${topSinfEntry[1]} ta)`;
+        }
+
+        // Destroy previous chart instances
+        Object.values(chartInstances).forEach(chart => chart?.destroy());
+        chartInstances = {};
+
+        // Chart 1: Kasblar
+        const ctxKasb = document.getElementById('chartKasblar').getContext('2d');
+        chartInstances.kasblar = new Chart(ctxKasb, {
+            type: 'bar',
+            data: {
+                labels: data.top_kasblar.map(x => x[0]),
+                datasets: [{
+                    label: "O'quvchilar soni",
+                    data: data.top_kasblar.map(x => x[1]),
+                    backgroundColor: '#10B981',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+
+        // Chart 2: Yangi to'garaklar
+        const ctxYt = document.getElementById('chartYangiTogaraklar').getContext('2d');
+        chartInstances.yt = new Chart(ctxYt, {
+            type: 'bar',
+            data: {
+                labels: data.top_yangi_togaraklar.map(x => x[0]),
+                datasets: [{
+                    label: "Takliflar soni",
+                    data: data.top_yangi_togaraklar.map(x => x[1]),
+                    backgroundColor: '#F59E0B',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+
+        // Chart 3: Sinflar
+        const ctxSinf = document.getElementById('chartSinflar').getContext('2d');
+        const sinfLabels = Object.keys(data.sinflar);
+        const sinfCounts = Object.values(data.sinflar);
+        chartInstances.sinflar = new Chart(ctxSinf, {
+            type: 'doughnut',
+            data: {
+                labels: sinfLabels,
+                datasets: [{
+                    data: sinfCounts,
+                    backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4', '#6366F1', '#14B8A6']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right' } }
+            }
+        });
+
+        // Chart 4: Iqtidor
+        const ctxIq = document.getElementById('chartIqtidor').getContext('2d');
+        chartInstances.iqtidor = new Chart(ctxIq, {
+            type: 'polarArea',
+            data: {
+                labels: data.top_iqtidorlar.map(x => x[0]),
+                datasets: [{
+                    data: data.top_iqtidorlar.map(x => x[1]),
+                    backgroundColor: [
+                        'rgba(16, 185, 129, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(245, 158, 11, 0.7)',
+                        'rgba(236, 72, 153, 0.7)',
+                        'rgba(139, 92, 246, 0.7)',
+                        'rgba(6, 182, 212, 0.7)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right' } }
+            }
+        });
+    }
+</script>
+{% endblock %}

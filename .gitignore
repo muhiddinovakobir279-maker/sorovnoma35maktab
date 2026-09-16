@@ -1,0 +1,21 @@
+# Windows binaries
+cloudflared.exe
+*.exe
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Environment and local files
+sayt_manzili.txt
+sayt_qr_kod.png
+*.log
+
+# Database (optional - will be created automatically by app.py)
+# database.db
