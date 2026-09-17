@@ -209,6 +209,10 @@
     async function loadStats() {
         try {
             const res = await fetch('/api/stats');
+            if (res.status === 401) {
+                window.location.href = '/admin/login?next=/admin/stats';
+                return;
+            }
             const data = await res.json();
             renderStats(data);
         } catch (err) {
@@ -226,9 +230,9 @@
         if (!data.total || data.total === 0) {
             notice.classList.remove('hidden');
             container.classList.add('hidden');
-            document.getElementById('statTopKasb').textContent = 'Hozircha yo'q';
-            document.getElementById('statTopTogarak').textContent = 'Hozircha yo'q';
-            document.getElementById('statTopSinf').textContent = 'Hozircha yo'q';
+            document.getElementById('statTopKasb').textContent = "Hozircha yo'q";
+            document.getElementById('statTopTogarak').textContent = "Hozircha yo'q";
+            document.getElementById('statTopSinf').textContent = "Hozircha yo'q";
             return;
         }
 
