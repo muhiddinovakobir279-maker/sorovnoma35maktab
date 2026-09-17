@@ -5,7 +5,7 @@ import random
 import string
 import io
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, session, flash
 import openpyxl
@@ -21,6 +21,7 @@ except Exception:
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'sorovnoma-portal-super-secret-key-2026'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # Admin paroli (buni xohlagan payt o'zgartirish mumkin)
@@ -94,6 +95,7 @@ def admin_login():
     if request.method == 'POST':
         password = request.form.get('password', '').strip()
         if password == ADMIN_PASSWORD:
+            session.permanent = True
             session['is_admin'] = True
             next_url = request.args.get('next') or url_for('admin_table')
             return redirect(next_url)
@@ -141,8 +143,13 @@ def get_entries():
         sql += " AND (LOWER(fish) LIKE ? OR LOWER(fingerprint) LIKE ? OR LOWER(takliflar) LIKE ? OR LOWER(iqtidor) LIKE ? OR LOWER(kasb) LIKE ?)"
         params.extend([f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%"])
     if sinf:
-        sql += " AND sinf = ?"
-        params.append(sinf)
+        if sinf.endswith('-sinf') or sinf.isdigit() or sinf.endswith('-klass') or sinf.endswith('-класс'):
+            grade_num = sinf.split('-')[0]
+            sql += " AND (sinf = ? OR sinf LIKE ? OR sinf LIKE ?)"
+            params.extend([sinf, f"{grade_num}-%", f"{grade_num}-класс%"])
+        else:
+            sql += " AND sinf = ?"
+            params.append(sinf)
     if til:
         sql += " AND til = ?"
         params.append(til)
@@ -364,7 +371,11 @@ def export_excel():
     sinf = request.args.get('sinf', '').strip()
     conn = get_db()
     if sinf:
-        rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma WHERE sinf = ? ORDER BY id ASC", (sinf,)).fetchall()
+        if sinf.endswith('-sinf') or sinf.isdigit() or sinf.endswith('-klass') or sinf.endswith('-класс'):
+            grade_num = sinf.split('-')[0]
+            rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma WHERE (sinf = ? OR sinf LIKE ? OR sinf LIKE ?) ORDER BY id ASC", (sinf, f"{grade_num}-%", f"{grade_num}-класс%")).fetchall()
+        else:
+            rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma WHERE sinf = ? ORDER BY id ASC", (sinf,)).fetchall()
         sheet_title = f"{sinf} sinf"
         filename = f"Sorovnoma_{sinf}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     else:
@@ -447,7 +458,11 @@ def export_csv():
     sinf = request.args.get('sinf', '').strip()
     conn = get_db()
     if sinf:
-        rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma WHERE sinf = ? ORDER BY id ASC", (sinf,)).fetchall()
+        if sinf.endswith('-sinf') or sinf.isdigit() or sinf.endswith('-klass') or sinf.endswith('-класс'):
+            grade_num = sinf.split('-')[0]
+            rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma WHERE (sinf = ? OR sinf LIKE ? OR sinf LIKE ?) ORDER BY id ASC", (sinf, f"{grade_num}-%", f"{grade_num}-класс%")).fetchall()
+        else:
+            rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma WHERE sinf = ? ORDER BY id ASC", (sinf,)).fetchall()
         filename = f"Sorovnoma_{sinf}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     else:
         rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma ORDER BY id ASC").fetchall()
