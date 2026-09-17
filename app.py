@@ -388,22 +388,35 @@ def export_excel():
     ws = wb.active
     ws.title = sheet_title
 
+    # Albomniy A4 format sozlamalari (100% Landscape Print-ready)
+    ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+    ws.page_setup.paperSize = ws.PAPERSIZE_A4
+    ws.page_setup.fitToPage = True
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 0
+    ws.print_title_rows = '1:1'
+    ws.sheet_view.showGridLines = True
+    ws.page_margins.left = 0.25
+    ws.page_margins.right = 0.25
+    ws.page_margins.top = 0.4
+    ws.page_margins.bottom = 0.4
+
     headers = [
-        "Sana va vaqt", "Fingerprint", "Til", "F.I.Sh.", "Sinf",
-        "Qiziqadigan fanlar", "Togaraklar", "Iqtidor sohasi", "Kelajak kasbi",
-        "Startap loyihasi", "Yangi togaraklar taklifi", "Qoshimcha takliflar"
+        "№", "F.I.Sh.", "Sinf", "Til", "Qiziqadigan fanlar",
+        "Qatnashayotgan to'garaklar", "Iqtidor sohasi", "Kelajak kasbi",
+        "Startap loyihasi", "Yangi to'garaklar taklifi", "Qo'shimcha takliflar", "Sana va vaqt"
     ]
 
     header_fill = PatternFill(start_color="107C41", end_color="107C41", fill_type="solid")
-    header_font = Font(name="Arial", size=11, bold=True, color="FFFFFF")
+    header_font = Font(name="Arial", size=10, bold=True, color="FFFFFF")
     center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
     left_align = Alignment(horizontal="left", vertical="center", wrap_text=True)
 
     thin_border = Border(
-        left=Side(style='thin', color='D3D3D3'),
-        right=Side(style='thin', color='D3D3D3'),
-        top=Side(style='thin', color='D3D3D3'),
-        bottom=Side(style='thin', color='D3D3D3')
+        left=Side(style='thin', color='C0C0C0'),
+        right=Side(style='thin', color='C0C0C0'),
+        top=Side(style='thin', color='C0C0C0'),
+        bottom=Side(style='thin', color='C0C0C0')
     )
 
     ws.append(headers)
@@ -415,28 +428,50 @@ def export_excel():
         cell.border = thin_border
     ws.row_dimensions[1].height = 28
 
-    alt_fill = PatternFill(start_color="F9FBF9", end_color="F9FBF9", fill_type="solid")
+    alt_fill = PatternFill(start_color="F7FDF9", end_color="F7FDF9", fill_type="solid")
 
     for r_idx, row in enumerate(rows, start=2):
-        row_data = list(row)
+        row_data = [
+            r_idx - 1,
+            row['fish'] or '',
+            row['sinf'] or '',
+            row['til'] or '',
+            row['fanlar'] or '',
+            row['togaraklar'] or '',
+            row['iqtidor'] or '',
+            row['kasb'] or '',
+            row['startap'] or '',
+            row['yangi_togaraklar'] or '',
+            row['takliflar'] or '',
+            (row['timestamp'] or '')[:16]
+        ]
         ws.append(row_data)
         is_alt = (r_idx % 2 == 0)
         for col_num in range(1, len(row_data) + 1):
             cell = ws.cell(row=r_idx, column=col_num)
-            cell.font = Font(name="Arial", size=10)
+            cell.font = Font(name="Arial", size=9)
             cell.border = thin_border
-            if col_num in [1, 2, 3, 5]:
+            if col_num in [1, 3, 4, 12]:
                 cell.alignment = center_align
             else:
                 cell.alignment = left_align
             if is_alt:
                 cell.fill = alt_fill
-        ws.row_dimensions[r_idx].height = 22
+        ws.row_dimensions[r_idx].height = 20
 
     col_widths = {
-        'A': 20, 'B': 14, 'C': 12, 'D': 32, 'E': 14,
-        'F': 35, 'G': 35, 'H': 35, 'I': 26, 'J': 30,
-        'K': 35, 'L': 40
+        'A': 5,   # №
+        'B': 26,  # F.I.Sh.
+        'C': 8,   # Sinf
+        'D': 8,   # Til
+        'E': 22,  # Qiziqadigan fanlar
+        'F': 22,  # Togaraklar
+        'G': 22,  # Iqtidor sohasi
+        'H': 18,  # Kelajak kasbi
+        'I': 18,  # Startap
+        'J': 22,  # Yangi togaraklar
+        'K': 24,  # Qoshimcha takliflar
+        'L': 14   # Sana
     }
     for col_letter, width in col_widths.items():
         ws.column_dimensions[col_letter].width = width
