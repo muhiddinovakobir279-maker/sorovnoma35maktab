@@ -133,7 +133,6 @@ def stats_redirect():
 def teacher_portal():
     conn = get_db()
     raw_classes = conn.execute("SELECT DISTINCT sinf FROM sorovnoma WHERE sinf IS NOT NULL AND sinf != '' ORDER BY sinf ASC").fetchall()
-    conn.close()
     
     # Sort classes logically: 5-A, 5-B... 11-I
     def class_sort_key(c):
@@ -141,8 +140,21 @@ def teacher_portal():
         num = int(digits) if digits else 99
         return (num, c)
 
-    all_classes = sorted([r['sinf'] for r in raw_classes], key=class_sort_key)
-    return render_template('oqituvchi.html', classes=all_classes)
+    sorted_classes = sorted([r['sinf'] for r in raw_classes], key=class_sort_key)
+    
+    classes_list = []
+    for c in sorted_classes:
+        if c.endswith('-sinf') or c.isdigit() or c.endswith('-klass') or c.endswith('-класс'):
+            grade_num = c.split('-')[0]
+            cnt = conn.execute("SELECT count(*) FROM sorovnoma WHERE sinf = ? OR sinf LIKE ? OR sinf LIKE ?", (c, f"{grade_num}-%", f"{grade_num}-класс%")).fetchone()[0]
+            classes_list.append({'val': c, 'label': f"{c} (Barcha {grade_num}-sinflar: {cnt} ta)"})
+        else:
+            cnt = conn.execute("SELECT count(*) FROM sorovnoma WHERE sinf = ?", (c,)).fetchone()[0]
+            classes_list.append({'val': c, 'label': f"{c} ({cnt} ta o'quvchi)"})
+    conn.close()
+
+    selected_sinf = request.args.get('sinf', '').strip()
+    return render_template('oqituvchi.html', classes=classes_list, selected_sinf=selected_sinf)
 
 @app.route('/api/class/<path:sinf_name>')
 def get_class_data(sinf_name):

@@ -43,18 +43,23 @@
             O'z Sinfingizni Tanlang:
         </label>
         
-        <div class="flex flex-col sm:flex-row items-center gap-3">
-            <div class="relative w-full sm:w-80">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div class="relative w-full sm:w-96">
                 <select id="classSelector" onchange="onSelectClass()" class="w-full pl-4 pr-10 py-3 bg-emerald-50/50 hover:bg-emerald-50 border-2 border-emerald-500/40 rounded-2xl text-sm font-black text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer">
                     <option value="">-- Sinfni tanlang --</option>
                     {% for c in classes %}
-                    <option value="{{ c }}">{{ c }}</option>
+                    <option value="{{ c.val }}" {% if c.val == selected_sinf %}selected{% endif %}>{{ c.label }}</option>
                     {% endfor %}
                 </select>
             </div>
+
+            <button type="button" onclick="onSelectClass()" class="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-md shadow-emerald-600/25 flex items-center justify-center space-x-2 transition-all cursor-pointer">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+                <span>Ko'rsatish</span>
+            </button>
             
             <div id="classActionButtons" class="hidden flex-wrap items-center gap-2 w-full sm:w-auto">
-                <a id="btnDownloadClassExcel" href="#" class="flex-1 sm:flex-none px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-md shadow-emerald-600/25 flex items-center justify-center space-x-2 transition-all">
+                <a id="btnDownloadClassExcel" href="#" class="flex-1 sm:flex-none px-4 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-md shadow-emerald-700/25 flex items-center justify-center space-x-2 transition-all">
                     <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
                     <span id="btnDownloadClassExcelText">Excel yuklash (A4 Albom)</span>
                 </a>
@@ -83,6 +88,9 @@
 
     <!-- Selected Class Dashboard & Results -->
     <div id="classDashboard" class="hidden space-y-6">
+
+        <!-- Informative note for class teacher -->
+        <div id="classNoticeBox"></div>
 
         <!-- 4 Summary KPI Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -221,6 +229,13 @@
             return;
         }
 
+        // Update URL query string seamlessly
+        try {
+            const url = new URL(window.location);
+            url.searchParams.set('sinf', sinf);
+            window.history.replaceState({}, '', url);
+        } catch(e) {}
+
         // Configure action links
         document.getElementById('btnDownloadClassExcel').href = `/export/excel?sinf=${encodeURIComponent(sinf)}`;
         document.getElementById('btnDownloadClassExcelText').textContent = `${sinf} Excel yuklash (A4 Albom)`;
@@ -237,6 +252,8 @@
                 renderClassData(data);
                 promptState.classList.add('hidden');
                 dashboard.classList.remove('hidden');
+            } else {
+                showToast("Sinf ma'lumotlari topilmadi", "error");
             }
         } catch (err) {
             console.error("Xatolik:", err);
@@ -245,6 +262,28 @@
     }
 
     function renderClassData(d) {
+        // Notice banner if specific class has few students
+        const noticeBox = document.getElementById('classNoticeBox');
+        if (noticeBox) {
+            const isGeneral = d.sinf.endsWith('-sinf') || d.sinf.endsWith('-klass') || d.sinf.endsWith('-класс');
+            const gradeNum = d.sinf.split('-')[0];
+            if (!isGeneral && d.total <= 3) {
+                noticeBox.innerHTML = `
+                    <div class="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 text-xs text-amber-900 flex items-start gap-3 shadow-sm">
+                        <i data-lucide="info" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
+                        <div>
+                            <span class="font-extrabold text-amber-950">Foydali Eslatma:</span>
+                            <p class="mt-0.5 text-amber-800 leading-relaxed">
+                                Ushbu <b>"${escapeHtml(d.sinf)}"</b> nomi bilan tizimda <b>${d.total} nafar</b> o'quvchi ro'yxatdan o'tgan. Agar sinfingiz o'quvchilari anketani to'ldirishda harf ko'rsatmasdan umumiy nom (masalan <b>"${gradeNum}-sinf"</b>) deb to'ldirgan bo'lsa, yuqoridagi ro'yxatdan <b>"${gradeNum}-sinf (Barcha ${gradeNum}-sinflar)"</b> bandini tanlang.
+                            </p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                noticeBox.innerHTML = '';
+            }
+        }
+
         document.getElementById('classStatTotal').textContent = `${d.total} nafar`;
         document.getElementById('classStatWithClubs').textContent = `${d.club_percent}% (${d.with_clubs} nafar)`;
         document.getElementById('classStatWithoutClubs').textContent = `${d.without_clubs} nafar`;
@@ -260,11 +299,11 @@
         if (d.top_fanlar && d.top_fanlar.length > 0) {
             fanlarContainer.innerHTML = d.top_fanlar.map(x => `
                 <span class="px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                    ${x[0]} (${x[1]})
+                    ${escapeHtml(x[0])} (${x[1]})
                 </span>
             `).join('');
         } else {
-            fanlarContainer.innerHTML = '<span class="text-xs text-gray-400">Ma'lumot yo'q</span>';
+            fanlarContainer.innerHTML = `<span class="text-xs text-gray-400">Ma'lumot yo'q</span>`;
         }
 
         // Top Iqtidor Badges
@@ -272,11 +311,11 @@
         if (d.top_iqtidor && d.top_iqtidor.length > 0) {
             iqtidorContainer.innerHTML = d.top_iqtidor.map(x => `
                 <span class="px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                    ${x[0]} (${x[1]})
+                    ${escapeHtml(x[0])} (${x[1]})
                 </span>
             `).join('');
         } else {
-            iqtidorContainer.innerHTML = '<span class="text-xs text-gray-400">Ma'lumot yo'q</span>';
+            iqtidorContainer.innerHTML = `<span class="text-xs text-gray-400">Ma'lumot yo'q</span>`;
         }
 
         // Top Yangi Togarak Badges
@@ -284,11 +323,11 @@
         if (d.top_yangi_togaraklar && d.top_yangi_togaraklar.length > 0) {
             ytContainer.innerHTML = d.top_yangi_togaraklar.map(x => `
                 <span class="px-2.5 py-1 rounded-xl text-xs font-bold bg-purple-50 text-purple-800 border border-purple-200">
-                    ${x[0]} (${x[1]})
+                    ${escapeHtml(x[0])} (${x[1]})
                 </span>
             `).join('');
         } else {
-            ytContainer.innerHTML = '<span class="text-xs text-gray-400">Ma'lumot yo'q</span>';
+            ytContainer.innerHTML = `<span class="text-xs text-gray-400">Ma'lumot yo'q</span>`;
         }
 
         // Table
@@ -297,14 +336,15 @@
 
         const tbody = document.getElementById('classStudentsBody');
         if (!d.students || d.students.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-400 text-sm">Ushbu sinfdan hali so'rovnoma to'ldirilmagan.</td></tr>';
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-gray-400 text-sm">Ushbu sinfdan hali so'rovnoma to'ldirilmagan.</td></tr>`;
+            lucide.createIcons();
             return;
         }
 
         tbody.innerHTML = d.students.map((item, idx) => {
-            const isNoClub = !item.togaraklar || item.togaraklar.toLowerCase().includes('bormayman') || item.togaraklar.toLowerCase().includes('yoq');
+            const isNoClub = !item.togaraklar || item.togaraklar.toLowerCase().includes('bormayman') || item.togaraklar.toLowerCase().includes('yoq') || item.togaraklar.toLowerCase().includes("yo'q");
             const clubBadge = isNoClub
-                ? '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1 w-fit"><i data-lucide="x-circle" class="w-3 h-3"></i> To'garakka bormaydi</span>'
+                ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1 w-fit"><i data-lucide="x-circle" class="w-3 h-3"></i> To'garakka bormaydi</span>`
                 : `<span class="text-gray-800">${escapeHtml(item.togaraklar)}</span>`;
 
             return `
@@ -313,7 +353,7 @@
                 <td class="py-2.5 px-4 font-bold text-gray-900">${escapeHtml(item.fish)}</td>
                 <td class="py-2.5 px-3">
                     <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold ${item.til === 'Русский' ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700'}">
-                        ${escapeHtml(item.til || 'O'zbek')}
+                        ${escapeHtml(item.til || "O'zbek")}
                     </span>
                 </td>
                 <td class="py-2.5 px-4 text-gray-700 truncate max-w-[200px]" title="${escapeHtml(item.fanlar)}">${escapeHtml(item.fanlar) || '-'}</td>
@@ -337,5 +377,12 @@
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const sel = document.getElementById('classSelector');
+        if (sel && sel.value) {
+            onSelectClass();
+        }
+    });
 </script>
 {% endblock %}
