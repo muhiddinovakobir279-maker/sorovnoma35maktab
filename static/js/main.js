@@ -22,10 +22,17 @@ async function loadEntries() {
 
     try {
         const res = await fetch(`/api/entries?${params.toString()}`);
+        if (res.status === 401) {
+            window.location.href = '/admin/login?next=/admin';
+            return;
+        }
         const result = await res.json();
         if (result.status === 'success') {
             rawEntries = result.data;
             applyTalentFilterAndRender();
+        } else {
+            console.error("API xatosi:", result);
+            showToast(result.message || "Xatolik yuz berdi", "error");
         }
     } catch (err) {
         console.error("Ma'lumot yuklashda xatolik:", err);
@@ -102,7 +109,7 @@ function applyTalentFilterAndRender() {
             } else if (activeTalentCategory === 'biznes') {
                 return str.includes('biznes') || str.includes('tadbirkor') || str.includes('startap') || str.includes('moliya') || str.includes('iqtisod') || str.includes('bank') || str.includes('yetakchilik');
             } else if (activeTalentCategory === 'sanat') {
-                return str.includes('san'at') || str.includes('sanat') || str.includes('rasm') || str.includes('musiqa') || str.includes('dizayn') || str.includes('raqs') || str.includes('ijod');
+                return str.includes("san'at") || str.includes('sanat') || str.includes('rasm') || str.includes('musiqa') || str.includes('dizayn') || str.includes('raqs') || str.includes('ijod');
             }
             return true;
         });
@@ -137,7 +144,7 @@ function renderTable(entries) {
     entries.forEach((item, index) => {
         const tilBadge = item.til === 'Русский' 
             ? '<span class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">Русский</span>'
-            : '<span class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">O'zbek</span>';
+            : '<span class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">O&#39;zbek</span>';
 
         const sinfBadge = `<span class="px-2.5 py-0.5 rounded-lg text-[11px] font-extrabold bg-gray-100 text-gray-800 border border-gray-200">${escapeHtml(item.sinf)}</span>`;
 
@@ -211,7 +218,7 @@ function clearSearch() {
 function openAddModal() {
     document.getElementById('entryForm').reset();
     document.getElementById('entryId').value = '';
-    document.getElementById('modalTitle').textContent = 'Yangi Ma'lumot Kiritish';
+    document.getElementById('modalTitle').textContent = "Yangi Ma'lumot Kiritish";
     document.getElementById('modalIcon').setAttribute('data-lucide', 'user-plus');
     lucide.createIcons();
     document.getElementById('entryModal').classList.remove('hidden');
@@ -372,8 +379,7 @@ async function confirmClearAll() {
         showToast("Jadval allaqachon bo'sh", "info");
         return;
     }
-    const check = prompt("DIQQAT: Jadvaldagi barcha ma'lumotlar butunlay o'chiriladi!
-Davom etish uchun 'TOZALASH' so'zini yozing:");
+    const check = prompt("DIQQAT: Jadvaldagi barcha ma'lumotlar butunlay o'chiriladi!\nDavom etish uchun 'TOZALASH' so'zini yozing:");
     if (check && check.trim().toUpperCase() === 'TOZALASH') {
         try {
             const res = await fetch('/api/clear', { method: 'POST' });
