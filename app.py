@@ -5,6 +5,7 @@ import random
 import string
 import io
 import csv
+import re
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, session, flash
@@ -126,6 +127,132 @@ def admin_stats():
 def stats_redirect():
     return redirect(url_for('admin_stats'))
 
+# --- O'qituvchilar va Sinf Rahbarlari Sahifalari ---
+
+@app.route('/oqituvchi')
+def teacher_portal():
+    conn = get_db()
+    raw_classes = conn.execute("SELECT DISTINCT sinf FROM sorovnoma WHERE sinf IS NOT NULL AND sinf != '' ORDER BY sinf ASC").fetchall()
+    conn.close()
+    
+    # Sort classes logically: 5-A, 5-B... 11-I
+    def class_sort_key(c):
+        digits = ''.join(ch for ch in c if ch.isdigit())
+        num = int(digits) if digits else 99
+        return (num, c)
+
+    all_classes = sorted([r['sinf'] for r in raw_classes], key=class_sort_key)
+    return render_template('oqituvchi.html', classes=all_classes)
+
+@app.route('/api/class/<path:sinf_name>')
+def get_class_data(sinf_name):
+    sinf_name = sinf_name.strip()
+    conn = get_db()
+    if sinf_name.endswith('-sinf') or sinf_name.isdigit() or sinf_name.endswith('-klass') or sinf_name.endswith('-класс'):
+        grade_num = sinf_name.split('-')[0]
+        rows = conn.execute("SELECT * FROM sorovnoma WHERE (sinf = ? OR sinf LIKE ? OR sinf LIKE ?) ORDER BY fish ASC", (sinf_name, f"{grade_num}-%", f"{grade_num}-класс%")).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM sorovnoma WHERE sinf = ? ORDER BY fish ASC", (sinf_name,)).fetchall()
+    conn.close()
+
+    total = len(rows)
+    with_clubs = 0
+    without_clubs = 0
+    fanlar = {}
+    kasblar = {}
+    iqtidorlar = {}
+    yangi_togaraklar = {}
+
+    for r in rows:
+        t_str = (r['togaraklar'] or '').lower()
+        if not t_str or 'bormayman' in t_str or "yo'q" in t_str or 'yoq' in t_str:
+            without_clubs += 1
+        else:
+            with_clubs += 1
+
+        for item in [x.strip() for x in (r['fanlar'] or '').split(',') if x.strip()]:
+            fanlar[item] = fanlar.get(item, 0) + 1
+        k = (r['kasb'] or '').strip()
+        if k:
+            kasblar[k] = kasblar.get(k, 0) + 1
+        for item in [x.strip() for x in (r['iqtidor'] or '').split(',') if x.strip()]:
+            iqtidorlar[item] = iqtidorlar.get(item, 0) + 1
+        for item in [x.strip() for x in (r['yangi_togaraklar'] or '').split(',') if x.strip()]:
+            yangi_togaraklar[item] = yangi_togaraklar.get(item, 0) + 1
+
+    top_fanlar = sorted(fanlar.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_kasblar = sorted(kasblar.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_iqtidor = sorted(iqtidorlar.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_yangi_togaraklar = sorted(yangi_togaraklar.items(), key=lambda x: x[1], reverse=True)[:5]
+
+    return jsonify({
+        'status': 'success',
+        'sinf': sinf_name,
+        'total': total,
+        'with_clubs': with_clubs,
+        'without_clubs': without_clubs,
+        'club_percent': round((with_clubs / total * 100) if total else 0),
+        'top_fanlar': top_fanlar,
+        'top_kasblar': top_kasblar,
+        'top_iqtidor': top_iqtidor,
+        'top_yangi_togaraklar': top_yangi_togaraklar,
+        'students': [dict(r) for r in rows]
+    })
+
+@app.route('/sinf-pasporti/<path:sinf_name>')
+def sinf_pasporti(sinf_name):
+    sinf_name = sinf_name.strip()
+    conn = get_db()
+    if sinf_name.endswith('-sinf') or sinf_name.isdigit() or sinf_name.endswith('-klass') or sinf_name.endswith('-класс'):
+        grade_num = sinf_name.split('-')[0]
+        rows = conn.execute("SELECT * FROM sorovnoma WHERE (sinf = ? OR sinf LIKE ? OR sinf LIKE ?) ORDER BY fish ASC", (sinf_name, f"{grade_num}-%", f"{grade_num}-класс%")).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM sorovnoma WHERE sinf = ? ORDER BY fish ASC", (sinf_name,)).fetchall()
+    conn.close()
+
+    total = len(rows)
+    with_clubs = 0
+    without_clubs = 0
+    fanlar = {}
+    kasblar = {}
+    iqtidorlar = {}
+    yangi_togaraklar = {}
+
+    for r in rows:
+        t_str = (r['togaraklar'] or '').lower()
+        if not t_str or 'bormayman' in t_str or "yo'q" in t_str or 'yoq' in t_str:
+            without_clubs += 1
+        else:
+            with_clubs += 1
+
+        for item in [x.strip() for x in (r['fanlar'] or '').split(',') if x.strip()]:
+            fanlar[item] = fanlar.get(item, 0) + 1
+        k = (r['kasb'] or '').strip()
+        if k:
+            kasblar[k] = kasblar.get(k, 0) + 1
+        for item in [x.strip() for x in (r['iqtidor'] or '').split(',') if x.strip()]:
+            iqtidorlar[item] = iqtidorlar.get(item, 0) + 1
+        for item in [x.strip() for x in (r['yangi_togaraklar'] or '').split(',') if x.strip()]:
+            yangi_togaraklar[item] = yangi_togaraklar.get(item, 0) + 1
+
+    top_fanlar = sorted(fanlar.items(), key=lambda x: x[1], reverse=True)[:6]
+    top_kasblar = sorted(kasblar.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_iqtidor = sorted(iqtidorlar.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_yangi_togaraklar = sorted(yangi_togaraklar.items(), key=lambda x: x[1], reverse=True)[:5]
+
+    stats = {
+        'total': total,
+        'with_clubs': with_clubs,
+        'without_clubs': without_clubs,
+        'club_percent': round((with_clubs / total * 100) if total else 0),
+        'top_fanlar': top_fanlar,
+        'top_kasblar': top_kasblar,
+        'top_iqtidor': top_iqtidor,
+        'top_yangi_togaraklar': top_yangi_togaraklar
+    }
+
+    return render_template('sinf_pasporti.html', sinf=sinf_name, stats=stats, students=[dict(r) for r in rows], today=datetime.now().strftime('%d.%m.%Y'))
+
 # --- API Routes ---
 
 @app.route('/api/entries', methods=['GET'])
@@ -135,6 +262,7 @@ def get_entries():
     sinf = request.args.get('sinf', '').strip()
     til = request.args.get('til', '').strip()
     kasb = request.args.get('kasb', '').strip()
+    togaraksiz = request.args.get('togaraksiz', '').strip()
 
     sql = "SELECT * FROM sorovnoma WHERE 1=1"
     params = []
@@ -156,6 +284,8 @@ def get_entries():
     if kasb:
         sql += " AND LOWER(kasb) LIKE ?"
         params.append(f"%{kasb.lower()}%")
+    if togaraksiz == '1':
+        sql += " AND (LOWER(togaraklar) LIKE '%bormayman%' OR LOWER(togaraklar) LIKE '%yoq%' OR LOWER(togaraklar) LIKE '%yo''q%' OR togaraklar = '' OR togaraklar IS NULL)"
 
     sql += " ORDER BY id DESC"
 
@@ -366,14 +496,16 @@ def get_stats():
 # --- Export Routes ---
 
 @app.route('/export/excel')
-@admin_required
 def export_excel():
     sinf = request.args.get('sinf', '').strip()
+    if not sinf and not session.get('is_admin'):
+        return redirect(url_for('admin_login', next=request.path))
+
     conn = get_db()
     if sinf:
         if sinf.endswith('-sinf') or sinf.isdigit() or sinf.endswith('-klass') or sinf.endswith('-класс'):
             grade_num = sinf.split('-')[0]
-            rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma WHERE (sinf = ? OR sinf LIKE ? OR sinf LIKE ?) ORDER BY id ASC", (sinf, f"{grade_num}-%", f"{grade_num}-класс%")).fetchall()
+            rows = conn.execute("SELECT * FROM sorovnoma WHERE (sinf = ? OR sinf LIKE ? OR sinf LIKE ?) ORDER BY sinf ASC, fish ASC", (sinf, f"{grade_num}-%", f"{grade_num}-класс%")).fetchall()
         else:
             rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma WHERE sinf = ? ORDER BY id ASC", (sinf,)).fetchall()
         sheet_title = f"{sinf} sinf"
@@ -523,6 +655,108 @@ def export_csv():
     return send_file(
         mem,
         mimetype="text/csv",
+        as_attachment=True,
+        download_name=filename
+    )
+
+@app.route('/export/togarak-excel')
+def export_togarak_excel():
+    nomi = request.args.get('nomi', '').strip()
+    if not nomi:
+        return "To'garak nomi ko'rsatilmadi", 400
+
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM sorovnoma WHERE LOWER(yangi_togaraklar) LIKE ? ORDER BY sinf ASC, fish ASC", (f"%{nomi.lower()}%",)).fetchall()
+    conn.close()
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Qabul ro'yxati"
+
+    # Albom A4 sozlamalari
+    ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+    ws.page_setup.paperSize = ws.PAPERSIZE_A4
+    ws.page_setup.fitToPage = True
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 0
+    ws.print_title_rows = '1:1'
+    ws.sheet_view.showGridLines = True
+    ws.page_margins.left = 0.25
+    ws.page_margins.right = 0.25
+    ws.page_margins.top = 0.4
+    ws.page_margins.bottom = 0.4
+
+    headers = [
+        "№", "F.I.Sh.", "Sinf", "Til", "Iqtidor sohasi", 
+        "Kelajak kasbi", "Istagan yangi to'garaklari", "Qo'shimcha takliflar", "Sana"
+    ]
+
+    header_fill = PatternFill(start_color="107C41", end_color="107C41", fill_type="solid")
+    header_font = Font(name="Arial", size=10, bold=True, color="FFFFFF")
+    center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    left_align = Alignment(horizontal="left", vertical="center", wrap_text=True)
+    thin_border = Border(left=Side(style='thin', color='C0C0C0'), right=Side(style='thin', color='C0C0C0'), top=Side(style='thin', color='C0C0C0'), bottom=Side(style='thin', color='C0C0C0'))
+
+    ws.append(headers)
+    for col_num in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = center_align
+        cell.border = thin_border
+    ws.row_dimensions[1].height = 28
+
+    alt_fill = PatternFill(start_color="F7FDF9", end_color="F7FDF9", fill_type="solid")
+
+    for r_idx, row in enumerate(rows, start=2):
+        row_data = [
+            r_idx - 1,
+            row['fish'] or '',
+            row['sinf'] or '',
+            row['til'] or '',
+            row['iqtidor'] or '',
+            row['kasb'] or '',
+            row['yangi_togaraklar'] or '',
+            row['takliflar'] or '',
+            (row['timestamp'] or '')[:16]
+        ]
+        ws.append(row_data)
+        is_alt = (r_idx % 2 == 0)
+        for col_num in range(1, len(row_data) + 1):
+            cell = ws.cell(row=r_idx, column=col_num)
+            cell.font = Font(name="Arial", size=9)
+            cell.border = thin_border
+            if col_num in [1, 3, 4, 9]:
+                cell.alignment = center_align
+            else:
+                cell.alignment = left_align
+            if is_alt:
+                cell.fill = alt_fill
+        ws.row_dimensions[r_idx].height = 20
+
+    col_widths = {
+        'A': 5,
+        'B': 26,
+        'C': 8,
+        'D': 8,
+        'E': 22,
+        'F': 20,
+        'G': 30,
+        'H': 26,
+        'I': 14
+    }
+    for col_letter, width in col_widths.items():
+        ws.column_dimensions[col_letter].width = width
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    clean_name = re.sub(r'[^a-zA-Z0-9_]', '_', nomi)[:30]
+    filename = f"Togarak_{clean_name}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    return send_file(
+        output,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         as_attachment=True,
         download_name=filename
     )

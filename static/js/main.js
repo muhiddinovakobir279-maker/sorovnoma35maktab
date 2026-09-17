@@ -78,16 +78,21 @@ function setTalentFilter(category) {
         'tibbiyot': 'tabTalentMed',
         'sport': 'tabTalentSport',
         'biznes': 'tabTalentBiz',
-        'sanat': 'tabTalentArt'
+        'sanat': 'tabTalentArt',
+        'togaraksiz': 'tabTalentNoClub'
     };
 
     Object.entries(tabs).forEach(([cat, id]) => {
         const el = document.getElementById(id);
         if (!el) return;
         if (cat === category) {
-            el.className = "px-3 py-1.5 rounded-xl font-bold bg-emerald-600 text-white shadow-sm transition-all whitespace-nowrap";
+            el.className = cat === 'togaraksiz'
+                ? "px-3 py-1.5 rounded-xl font-bold bg-rose-600 text-white shadow-sm transition-all whitespace-nowrap"
+                : "px-3 py-1.5 rounded-xl font-bold bg-emerald-600 text-white shadow-sm transition-all whitespace-nowrap";
         } else {
-            el.className = "px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-all whitespace-nowrap";
+            el.className = cat === 'togaraksiz'
+                ? "px-3 py-1.5 rounded-xl font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 transition-all whitespace-nowrap border border-rose-200"
+                : "px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-all whitespace-nowrap";
         }
     });
 
@@ -99,6 +104,10 @@ function applyTalentFilterAndRender() {
         currentEntries = [...rawEntries];
     } else {
         currentEntries = rawEntries.filter(item => {
+            if (activeTalentCategory === 'togaraksiz') {
+                const t = (item.togaraklar || '').toLowerCase();
+                return !t || t.includes('bormayman') || t.includes('yoq') || t.includes("yo'q");
+            }
             const str = `${item.iqtidor} ${item.kasb} ${item.yangi_togaraklar} ${item.fanlar} ${item.togaraklar}`.toLowerCase();
             if (activeTalentCategory === 'it') {
                 return str.includes('it') || str.includes('dastur') || str.includes('robot') || str.includes('veb') || str.includes('informatika');

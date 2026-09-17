@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ sinf }} Sinf Pasporti - 35-Maktab</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f1f5f9;
+        }
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                padding: 0 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .page-container {
+                box-shadow: none !important;
+                border: none !important;
+                margin: 0 !important;
+                padding: 10mm !important;
+                max-width: 100% !important;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 8mm;
+            }
+        }
+    </style>
+</head>
+<body class="py-6 px-3 sm:px-6 min-h-screen flex flex-col items-center">
+
+    <!-- Print / Action Toolbar (Hidden during print) -->
+    <div class="no-print max-w-4xl w-full mb-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center space-x-2">
+            <a href="/oqituvchi" class="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl flex items-center space-x-1 transition-all">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>Kabinetga qaytish</span>
+            </a>
+            <span class="text-xs font-semibold text-gray-500">35-Maktab • {{ sinf }} Sinf Pasporti</span>
+        </div>
+        <div class="flex items-center space-x-2">
+            <a href="/export/excel?sinf={{ sinf }}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 shadow-sm transition-all">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                <span>Excel yuklash</span>
+            </a>
+            <button onclick="window.print()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 shadow-sm transition-all">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+                <span>Chop etish (A4)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Official A4 Document Canvas -->
+    <div class="page-container bg-white max-w-4xl w-full p-8 sm:p-12 rounded-3xl border border-gray-300 shadow-xl text-slate-900">
+
+        <!-- Official Header -->
+        <div class="text-center pb-6 border-b-2 border-slate-900">
+            <div class="flex justify-center items-center gap-4 mb-2">
+                <div class="w-14 h-14 rounded-2xl bg-emerald-700 text-white flex items-center justify-center font-black text-xl shadow-sm">
+                    35
+                </div>
+                <div>
+                    <h3 class="text-[11px] uppercase tracking-widest font-extrabold text-slate-500">
+                        O'zbekiston Respublikasi Maktabgacha va Maktab Ta'limi Vazirligi
+                    </h3>
+                    <h2 class="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight mt-0.5">
+                        Toshkent Shahar 35-Sonli Umumta'lim Maktabi
+                    </h2>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-200 flex flex-col items-center">
+                <span class="px-3.5 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 uppercase tracking-wider mb-1">
+                    Rasmiy Hujjat • 2026-o'quv yili
+                </span>
+                <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase">
+                    {{ sinf }} SINF O'QUVCHILARINING QIZIQISH VA KASBIY YO'NALISH PASPORTI
+                </h1>
+                <p class="text-xs text-slate-500 mt-1">
+                    Rasmiylashtirilgan sana: <span class="font-bold text-slate-800">{{ today }} yil</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Metric Summary Badges Grid -->
+        <div class="grid grid-cols-3 gap-3 my-6 text-center">
+            <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">So'rovnomada Qatnashgan</span>
+                <span class="text-2xl font-black text-slate-900 block mt-0.5">{{ stats.total }} nafar</span>
+                <span class="text-[10px] text-emerald-700 font-semibold">100% ishtirok</span>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200">
+                <span class="text-[10px] uppercase font-bold text-emerald-600 block tracking-wider">To'garaklar Qamrovi</span>
+                <span class="text-2xl font-black text-emerald-900 block mt-0.5">{{ stats.club_percent }}%</span>
+                <span class="text-[10px] text-emerald-800 font-semibold">{{ stats.with_clubs }} nafar qatnashadi</span>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200">
+                <span class="text-[10px] uppercase font-bold text-rose-600 block tracking-wider">To'garakka Bormaydigan</span>
+                <span class="text-2xl font-black text-rose-700 block mt-0.5">{{ stats.without_clubs }} nafar</span>
+                <span class="text-[10px] text-rose-800 font-semibold">Jalb etish talab etiladi</span>
+            </div>
+        </div>
+
+        <!-- Section 1 & 2: Fanlar va Kasblar tahlili -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+            <!-- Top Fanlar -->
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <h4 class="text-xs font-black uppercase text-slate-700 tracking-wider mb-2.5 pb-1 border-b border-slate-200 flex items-center justify-between">
+                    <span>1. Qiziqadigan Asosiy Fanlar (Top)</span>
+                    <span class="text-[10px] text-slate-400">O'quvchilar soni</span>
+                </h4>
+                <ul class="space-y-1.5 text-xs">
+                    {% for f, count in stats.top_fanlar %}
+                    <li class="flex justify-between items-center py-1 px-2 rounded-lg bg-white border border-slate-100 font-medium">
+                        <span class="text-slate-800">{{ loop.index }}. {{ f }}</span>
+                        <span class="font-bold text-emerald-700 font-mono">{{ count }} nafar</span>
+                    </li>
+                    {% endfor %}
+                    {% if not stats.top_fanlar %}
+                    <li class="text-slate-400 italic">Ma'lumot yo'q</li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <!-- Top Kasblar -->
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <h4 class="text-xs font-black uppercase text-slate-700 tracking-wider mb-2.5 pb-1 border-b border-slate-200 flex items-center justify-between">
+                    <span>2. Tanlangan Kelajak Kasblari (Top)</span>
+                    <span class="text-[10px] text-slate-400">O'quvchilar soni</span>
+                </h4>
+                <ul class="space-y-1.5 text-xs">
+                    {% for k, count in stats.top_kasblar %}
+                    <li class="flex justify-between items-center py-1 px-2 rounded-lg bg-white border border-slate-100 font-medium">
+                        <span class="text-slate-800">{{ loop.index }}. {{ k }}</span>
+                        <span class="font-bold text-blue-700 font-mono">{{ count }} nafar</span>
+                    </li>
+                    {% endfor %}
+                    {% if not stats.top_kasblar %}
+                    <li class="text-slate-400 italic">Ma'lumot yo'q</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Section 3 & 4: Iqtidor va Yangi To'garaklar -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <h4 class="text-xs font-black uppercase text-slate-700 tracking-wider mb-2.5 pb-1 border-b border-slate-200">
+                    3. Iqtidor va Qobiliyat Sohalari
+                </h4>
+                <div class="flex flex-wrap gap-1.5 text-xs">
+                    {% for iq, count in stats.top_iqtidor %}
+                    <span class="px-2.5 py-1 rounded-xl bg-white border border-slate-200 text-slate-800 font-semibold text-[11px]">
+                        {{ iq }}: <b class="text-emerald-700">{{ count }}</b>
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <h4 class="text-xs font-black uppercase text-slate-700 tracking-wider mb-2.5 pb-1 border-b border-slate-200">
+                    4. O'quvchilar Taklif Qilgan Yangi To'garaklar
+                </h4>
+                <div class="flex flex-wrap gap-1.5 text-xs">
+                    {% for yt, count in stats.top_yangi_togaraklar %}
+                    <span class="px-2.5 py-1 rounded-xl bg-white border border-slate-200 text-slate-800 font-semibold text-[11px]">
+                        {{ yt }}: <b class="text-purple-700">{{ count }}</b>
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 5: Student Roster Summary Table -->
+        <div class="mb-8">
+            <h4 class="text-xs font-black uppercase text-slate-800 tracking-wider mb-2 pb-1 border-b-2 border-slate-900">
+                5. Sinf O'quvchilari Qisqacha Ro'yxati va To'garak Bandligi
+            </h4>
+            <table class="w-full text-left border-collapse text-[11px]">
+                <thead>
+                    <tr class="bg-slate-100 border-b border-slate-300 font-extrabold text-slate-700 uppercase">
+                        <th class="py-1.5 px-2 text-center w-8">#</th>
+                        <th class="py-1.5 px-3">F.I.Sh.</th>
+                        <th class="py-1.5 px-3">Hozirgi To'garaklar</th>
+                        <th class="py-1.5 px-3">Kelajak Kasbi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200">
+                    {% for s in students %}
+                    <tr class="{% if loop.index % 2 == 0 %}bg-slate-50/60{% endif %}">
+                        <td class="py-1.5 px-2 text-center font-mono text-slate-400">{{ loop.index }}</td>
+                        <td class="py-1.5 px-3 font-bold text-slate-900">{{ s.fish }}</td>
+                        <td class="py-1.5 px-3 text-slate-700">
+                            {% if not s.togaraklar or 'bormayman' in s.togaraklar.lower() or 'yoq' in s.togaraklar.lower() %}
+                            <span class="font-bold text-rose-600">To'garakka bormaydi</span>
+                            {% else %}
+                            {{ s.togaraklar }}
+                            {% endif %}
+                        </td>
+                        <td class="py-1.5 px-3 font-semibold text-blue-800">{{ s.kasb or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Signatures & Stamp Block -->
+        <div class="pt-6 border-t-2 border-slate-900 text-xs text-slate-800 space-y-6">
+            <div class="grid grid-cols-3 gap-6 text-center">
+                <div>
+                    <span class="font-extrabold block text-slate-900">35-Maktab Direktori:</span>
+                    <div class="mt-8 pt-1 border-t border-dashed border-slate-400 text-slate-500 text-[10px]">
+                        (imzo va muhr o'rni)
+                    </div>
+                </div>
+                <div>
+                    <span class="font-extrabold block text-slate-900">MMIBDO' (Ma'naviyatchi):</span>
+                    <div class="mt-8 pt-1 border-t border-dashed border-slate-400 text-slate-500 text-[10px]">
+                        (imzo)
+                    </div>
+                </div>
+                <div>
+                    <span class="font-extrabold block text-slate-900">{{ sinf }} Sinf Rahbari:</span>
+                    <div class="mt-8 pt-1 border-t border-dashed border-slate-400 text-slate-500 text-[10px]">
+                        (imzo)
+                    </div>
+                </div>
+            </div>
+            <div class="text-center text-[10px] text-slate-400 pt-2">
+                Ushbu pasport 35-maktab so'rovnoma portali orqali avtomatik shakllantirilgan rasmiy hujjat hisoblanadi.
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
