@@ -21,6 +21,7 @@ except Exception:
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'sorovnoma-portal-super-secret-key-2026'
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # Admin paroli (buni xohlagan payt o'zgartirish mumkin)
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin2026')
@@ -137,8 +138,8 @@ def get_entries():
     params = []
 
     if query:
-        sql += " AND (LOWER(fish) LIKE ? OR LOWER(fingerprint) LIKE ? OR LOWER(takliflar) LIKE ?)"
-        params.extend([f"%{query}%", f"%{query}%", f"%{query}%"])
+        sql += " AND (LOWER(fish) LIKE ? OR LOWER(fingerprint) LIKE ? OR LOWER(takliflar) LIKE ? OR LOWER(iqtidor) LIKE ? OR LOWER(kasb) LIKE ?)"
+        params.extend([f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%"])
     if sinf:
         sql += " AND sinf = ?"
         params.append(sinf)
@@ -169,6 +170,25 @@ def add_entry():
     if not fish or not sinf:
         return jsonify({'status': 'error', 'message': "F.I.Sh. va Sinf maydonlarini to'ldirish shart!"}), 400
 
+    # Anti-duplicate / Spam protection: check if same fish and sinf was submitted in last 2 minutes
+    conn = get_db()
+    recent = conn.execute(
+        "SELECT id, timestamp FROM sorovnoma WHERE LOWER(fish) = ? AND sinf = ? ORDER BY id DESC LIMIT 1",
+        (fish.lower(), sinf)
+    ).fetchone()
+    if recent:
+        try:
+            prev_time = datetime.strptime(recent['timestamp'], '%Y-%m-%d %H:%M:%S')
+            diff_secs = (datetime.now() - prev_time).total_seconds()
+            if diff_secs < 120:
+                conn.close()
+                return jsonify({
+                    'status': 'error',
+                    'message': f"Hurmatli {fish}, sizning anketangiz qabul qilingan! Qayta yuborish talab etilmaydi."
+                }), 400
+        except Exception:
+            pass
+
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     timestamp = data.get('timestamp') or now_str
     fingerprint = data.get('fingerprint') or generate_fingerprint()
@@ -189,7 +209,6 @@ def add_entry():
         yangi_togaraklar = ", ".join(yangi_togaraklar)
     takliflar = data.get('takliflar', '').strip()
 
-    conn = get_db()
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO sorovnoma (timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar)
@@ -342,13 +361,21 @@ def get_stats():
 @app.route('/export/excel')
 @admin_required
 def export_excel():
+    sinf = request.args.get('sinf', '').strip()
     conn = get_db()
-    rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma ORDER BY id ASC").fetchall()
+    if sinf:
+        rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma WHERE sinf = ? ORDER BY id ASC", (sinf,)).fetchall()
+        sheet_title = f"{sinf} sinf"
+        filename = f"Sorovnoma_{sinf}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    else:
+        rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma ORDER BY id ASC").fetchall()
+        sheet_title = "Barcha natijalar"
+        filename = f"Sorovnoma_35maktab_Barchasi_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     conn.close()
 
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Natijalar"
+    ws.title = sheet_title
 
     headers = [
         "Sana va vaqt", "Fingerprint", "Til", "F.I.Sh.", "Sinf",
@@ -407,7 +434,6 @@ def export_excel():
     wb.save(output)
     output.seek(0)
 
-    filename = f"Sorovnoma_Natijalar_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     return send_file(
         output,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -418,8 +444,14 @@ def export_excel():
 @app.route('/export/csv')
 @admin_required
 def export_csv():
+    sinf = request.args.get('sinf', '').strip()
     conn = get_db()
-    rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma ORDER BY id ASC").fetchall()
+    if sinf:
+        rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma WHERE sinf = ? ORDER BY id ASC", (sinf,)).fetchall()
+        filename = f"Sorovnoma_{sinf}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    else:
+        rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma ORDER BY id ASC").fetchall()
+        filename = f"Sorovnoma_35maktab_Barchasi_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     conn.close()
 
     headers = [
@@ -438,7 +470,6 @@ def export_csv():
     mem.write(output.getvalue().encode('utf-8-sig'))
     mem.seek(0)
 
-    filename = f"Sorovnoma_Natijalar_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     return send_file(
         mem,
         mimetype="text/csv",

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Tahlil va Statistika - Sorovnoma Natijalari{% endblock %}
+{% block title %}Tahlil va Statistika - 35-Maktab So'rovnomasi{% endblock %}
 
 {% block head %}
 <!-- Chart.js -->
@@ -8,143 +8,191 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+<div class="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 space-y-6">
     
     <!-- Page Header -->
-    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="glass-card bg-white rounded-3xl p-6 sm:p-8 border border-emerald-900/10 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
+            <div class="flex items-center space-x-2 mb-1">
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    🏛️ 35-MAKTAB TAHLILI
+                </span>
+                <span class="text-xs text-gray-400">• 2026</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight flex items-center gap-2.5">
                 <i data-lucide="bar-chart-3" class="w-7 h-7 text-emerald-600"></i>
                 So'rovnoma Tahlili va Statistikasi
             </h1>
-            <p class="text-sm text-gray-500 mt-1">Kiritilgan ma'lumotlar asosida avtomatik shakllanadigan grafiklar va hisobotlar</p>
+            <p class="text-xs sm:text-sm text-gray-500 mt-1">O'quvchilar anketalari asosida avtomatik shakllanadigan tahliliy diagrammalar va sinflar reytingi</p>
         </div>
 
         <div class="flex items-center space-x-2">
-            <button onclick="loadStats()" class="px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium shadow-sm flex items-center space-x-1.5 transition-all">
-                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <button onclick="loadStats()" class="px-4 py-2.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 rounded-xl text-xs sm:text-sm font-semibold shadow-sm flex items-center space-x-1.5 transition-all">
+                <i data-lucide="refresh-cw" class="w-4 h-4 text-emerald-600"></i>
                 <span>Yangilash</span>
             </button>
-            <a href="/" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow-sm flex items-center space-x-1.5 transition-all">
+            <a href="/admin" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-emerald-600/20 flex items-center space-x-1.5 transition-all">
                 <i data-lucide="table" class="w-4 h-4"></i>
-                <span>Jadvalga qaytish</span>
+                <span>Jadvalga o'tish</span>
             </a>
         </div>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <!-- Summary Metrics Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Card 1: Total -->
-        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                <i data-lucide="users" class="w-6 h-6"></i>
+        <div class="glass-card bg-white p-6 rounded-3xl border border-emerald-900/10 shadow-sm flex items-center space-x-4">
+            <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-700 flex items-center justify-center">
+                <i data-lucide="users" class="w-7 h-7"></i>
             </div>
             <div>
-                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Jami O'quvchilar</span>
-                <h3 id="statTotal" class="text-2xl font-extrabold text-gray-900 mt-0.5">0</h3>
+                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Jami O'quvchilar</span>
+                <h3 id="statTotal" class="text-3xl font-black text-gray-900 mt-0.5">0</h3>
             </div>
         </div>
 
         <!-- Card 2: Top Profession -->
-        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
-                <i data-lucide="briefcase" class="w-6 h-6"></i>
+        <div class="glass-card bg-white p-6 rounded-3xl border border-emerald-900/10 shadow-sm flex items-center space-x-4">
+            <div class="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-700 flex items-center justify-center">
+                <i data-lucide="briefcase" class="w-7 h-7"></i>
             </div>
             <div class="overflow-hidden">
-                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Top Kasb</span>
-                <h3 id="statTopKasb" class="text-base font-bold text-gray-900 mt-0.5 truncate" title="-">-</h3>
+                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Top Kasb</span>
+                <h3 id="statTopKasb" class="text-sm sm:text-base font-extrabold text-gray-900 mt-0.5 truncate" title="-">-</h3>
             </div>
         </div>
 
         <!-- Card 3: Top New Club -->
-        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
-                <i data-lucide="sparkles" class="w-6 h-6"></i>
+        <div class="glass-card bg-white p-6 rounded-3xl border border-emerald-900/10 shadow-sm flex items-center space-x-4">
+            <div class="w-14 h-14 rounded-2xl bg-purple-500/10 text-purple-700 flex items-center justify-center">
+                <i data-lucide="sparkles" class="w-7 h-7"></i>
             </div>
             <div class="overflow-hidden">
-                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Eng Talabgir To'garak</span>
-                <h3 id="statTopTogarak" class="text-base font-bold text-gray-900 mt-0.5 truncate" title="-">-</h3>
+                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Top Yangi To'garak</span>
+                <h3 id="statTopTogarak" class="text-sm sm:text-base font-extrabold text-gray-900 mt-0.5 truncate" title="-">-</h3>
             </div>
         </div>
 
         <!-- Card 4: Top Class -->
-        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
-                <i data-lucide="graduation-cap" class="w-6 h-6"></i>
+        <div class="glass-card bg-white p-6 rounded-3xl border border-emerald-900/10 shadow-sm flex items-center space-x-4">
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center">
+                <i data-lucide="graduation-cap" class="w-7 h-7"></i>
             </div>
             <div>
-                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Eng Faol Sinf</span>
-                <h3 id="statTopSinf" class="text-base font-bold text-gray-900 mt-0.5">-</h3>
+                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Eng Faol Sinf</span>
+                <h3 id="statTopSinf" class="text-base sm:text-lg font-extrabold text-gray-900 mt-0.5">-</h3>
             </div>
         </div>
     </div>
 
     <!-- Empty State for Stats -->
-    <div id="statsEmptyNotice" class="hidden bg-white rounded-2xl p-10 text-center border border-gray-200 shadow-sm mb-8">
-        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400">
+    <div id="statsEmptyNotice" class="hidden glass-card bg-white rounded-3xl p-12 text-center border border-gray-200 shadow-sm">
+        <div class="w-16 h-16 bg-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-3 text-gray-400">
             <i data-lucide="pie-chart" class="w-8 h-8"></i>
         </div>
         <h3 class="text-lg font-bold text-gray-800 mb-1">Hozircha ma'lumotlar mavjud emas</h3>
         <p class="text-sm text-gray-500 max-w-md mx-auto mb-4">
-            Baza hozircha bo'sh bo'lgani uchun statistik grafiklar ko'rsatilmaydi. So'rovnoma orqali birinchi ma'lumotlar kiritilgach, diagrammalar avtomatik shakllanadi!
+            Bazada so'rovnoma ma'lumotlari kiritilgach, ushbu sahifada barcha diagrammalar avtomatik shakllanadi.
         </p>
-        <a href="/sorovnoma" class="inline-flex items-center space-x-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-all">
-            <i data-lucide="plus" class="w-4 h-4"></i>
-            <span>So'rovnoma to'ldirish</span>
-        </a>
     </div>
 
     <!-- Charts Grid -->
     <div id="chartsContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <!-- Chart 1: Top Kasblar -->
-        <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-            <h3 class="text-base font-bold text-gray-800 mb-1 flex items-center gap-2">
-                <i data-lucide="award" class="w-5 h-5 text-emerald-600"></i>
-                Eng Ko'p Tanlangan Kelajak Kasblari (Top 10)
-            </h3>
-            <p class="text-xs text-gray-400 mb-4">O'quvchilar kelajakda tanlamoqchi bo'lgan sohalar</p>
-            <div class="h-72">
+        <div class="glass-card bg-white p-6 sm:p-7 rounded-3xl border border-emerald-900/10 shadow-sm">
+            <div class="flex items-center space-x-2.5 mb-1">
+                <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                    <i data-lucide="award" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900">Eng Ko'p Tanlangan Kasblar (Top 10)</h3>
+                    <p class="text-xs text-gray-400">O'quvchilar kelajakda tanlamoqchi bo'lgan sohalar</p>
+                </div>
+            </div>
+            <div class="h-72 mt-4">
                 <canvas id="chartKasblar"></canvas>
             </div>
         </div>
 
         <!-- Chart 2: Yangi To'garaklar Taklifi -->
-        <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-            <h3 class="text-base font-bold text-gray-800 mb-1 flex items-center gap-2">
-                <i data-lucide="lightbulb" class="w-5 h-5 text-amber-500"></i>
-                Yangi Ochilishi Kutilayotgan To'garaklar Taklifi
-            </h3>
-            <p class="text-xs text-gray-400 mb-4">O'quvchilar tomonidan eng ko'p so'ralgan yangi to'garaklar</p>
-            <div class="h-72">
+        <div class="glass-card bg-white p-6 sm:p-7 rounded-3xl border border-emerald-900/10 shadow-sm">
+            <div class="flex items-center space-x-2.5 mb-1">
+                <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                    <i data-lucide="lightbulb" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900">Yangi Ochilishi Kutilayotgan To'garaklar</h3>
+                    <p class="text-xs text-gray-400">O'quvchilar eng ko'p taklif qilgan yangi to'garaklar</p>
+                </div>
+            </div>
+            <div class="h-72 mt-4">
                 <canvas id="chartYangiTogaraklar"></canvas>
             </div>
         </div>
 
         <!-- Chart 3: Sinflar Kesimi -->
-        <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-            <h3 class="text-base font-bold text-gray-800 mb-1 flex items-center gap-2">
-                <i data-lucide="pie-chart" class="w-5 h-5 text-blue-600"></i>
-                Sinflar Kesimida O'quvchilar Taqsimoti
-            </h3>
-            <p class="text-xs text-gray-400 mb-4">So'rovnomada qatnashgan sinflar ulushi</p>
-            <div class="h-72 flex items-center justify-center">
+        <div class="glass-card bg-white p-6 sm:p-7 rounded-3xl border border-emerald-900/10 shadow-sm">
+            <div class="flex items-center space-x-2.5 mb-1">
+                <div class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
+                    <i data-lucide="pie-chart" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900">Sinflar Kesimida Qatnashuvchilar</h3>
+                    <p class="text-xs text-gray-400">So'rovnomada ishtirok etgan sinflar ulushi</p>
+                </div>
+            </div>
+            <div class="h-72 mt-4 flex items-center justify-center">
                 <canvas id="chartSinflar"></canvas>
             </div>
         </div>
 
         <!-- Chart 4: Iqtidor Sohalari -->
-        <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-            <h3 class="text-base font-bold text-gray-800 mb-1 flex items-center gap-2">
-                <i data-lucide="compass" class="w-5 h-5 text-purple-600"></i>
-                Iqtidor va Qobiliyat Sohalari
-            </h3>
-            <p class="text-xs text-gray-400 mb-4">O'quvchilar o'zlarini kuchli deb hisoblaydigan yo'nalishlar</p>
-            <div class="h-72 flex items-center justify-center">
+        <div class="glass-card bg-white p-6 sm:p-7 rounded-3xl border border-emerald-900/10 shadow-sm">
+            <div class="flex items-center space-x-2.5 mb-1">
+                <div class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center">
+                    <i data-lucide="compass" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900">Iqtidor va Qobiliyat Yo'nalishlari</h3>
+                    <p class="text-xs text-gray-400">O'quvchilar o'zlarini kuchli hisoblaydigan sohalar</p>
+                </div>
+            </div>
+            <div class="h-72 mt-4 flex items-center justify-center">
                 <canvas id="chartIqtidor"></canvas>
             </div>
         </div>
 
+    </div>
+
+    <!-- Class-by-Class Ranking Table -->
+    <div class="glass-card bg-white p-6 sm:p-8 rounded-3xl border border-emerald-900/10 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-gray-100">
+            <div>
+                <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <i data-lucide="list-ordered" class="w-5 h-5 text-emerald-600"></i>
+                    Sinflar Bo'yicha To'liq Hisobot va Excel Yuklash
+                </h3>
+                <p class="text-xs text-gray-400">Har bir sinfning ishtirok ko'rsatkichi va alohida Excel yuklab olish</p>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead>
+                    <tr class="border-b border-gray-200 text-gray-400 uppercase tracking-wider font-extrabold text-[11px]">
+                        <th class="py-2.5 px-3">#</th>
+                        <th class="py-2.5 px-3">Sinf</th>
+                        <th class="py-2.5 px-3">O'quvchilar soni</th>
+                        <th class="py-2.5 px-3">Ulushi</th>
+                        <th class="py-2.5 px-3 text-right">Amal</th>
+                    </tr>
+                </thead>
+                <tbody id="classRankingBody" class="divide-y divide-gray-100">
+                    <!-- Dynamic rows inserted by loadStats -->
+                </tbody>
+            </table>
+        </div>
     </div>
 
 </div>
@@ -178,9 +226,9 @@
         if (!data.total || data.total === 0) {
             notice.classList.remove('hidden');
             container.classList.add('hidden');
-            document.getElementById('statTopKasb').textContent = 'Hozircha yo\'q';
-            document.getElementById('statTopTogarak').textContent = 'Hozircha yo\'q';
-            document.getElementById('statTopSinf').textContent = 'Hozircha yo\'q';
+            document.getElementById('statTopKasb').textContent = 'Hozircha yo'q';
+            document.getElementById('statTopTogarak').textContent = 'Hozircha yo'q';
+            document.getElementById('statTopSinf').textContent = 'Hozircha yo'q';
             return;
         }
 
@@ -199,6 +247,39 @@
             document.getElementById('statTopSinf').textContent = `${topSinfEntry[0]} (${topSinfEntry[1]} ta)`;
         }
 
+        // Render Class Ranking Table
+        const rankingBody = document.getElementById('classRankingBody');
+        if (rankingBody && data.sinflar) {
+            const sortedClasses = Object.entries(data.sinflar).sort((a,b) => b[1] - a[1]);
+            rankingBody.innerHTML = sortedClasses.map(([sinf, count], idx) => {
+                const pct = Math.round((count / data.total) * 100);
+                return `
+                <tr class="hover:bg-emerald-50/40 transition-colors">
+                    <td class="py-2.5 px-3 font-mono text-gray-400 font-bold">${idx + 1}</td>
+                    <td class="py-2.5 px-3 font-black text-gray-900 text-sm">
+                        <span class="px-2.5 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-200">${sinf}</span>
+                    </td>
+                    <td class="py-2.5 px-3 font-bold text-gray-800">${count} nafar</td>
+                    <td class="py-2.5 px-3">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-24 bg-gray-100 rounded-full h-2 overflow-hidden">
+                                <div class="bg-emerald-600 h-full rounded-full" style="width: ${pct}%"></div>
+                            </div>
+                            <span class="text-[11px] font-bold text-gray-600">${pct}%</span>
+                        </div>
+                    </td>
+                    <td class="py-2.5 px-3 text-right">
+                        <a href="/export/excel?sinf=${encodeURIComponent(sinf)}" class="inline-flex items-center space-x-1 px-3 py-1 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:text-emerald-700 text-gray-700 font-bold text-xs shadow-sm transition-all">
+                            <i data-lucide="file-down" class="w-3.5 h-3.5 text-emerald-600"></i>
+                            <span>Excel</span>
+                        </a>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
         // Destroy previous chart instances
         Object.values(chartInstances).forEach(chart => chart?.destroy());
         chartInstances = {};
@@ -212,8 +293,8 @@
                 datasets: [{
                     label: "O'quvchilar soni",
                     data: data.top_kasblar.map(x => x[1]),
-                    backgroundColor: '#10B981',
-                    borderRadius: 6
+                    backgroundColor: '#059669',
+                    borderRadius: 8
                 }]
             },
             options: {
@@ -233,8 +314,8 @@
                 datasets: [{
                     label: "Takliflar soni",
                     data: data.top_yangi_togaraklar.map(x => x[1]),
-                    backgroundColor: '#F59E0B',
-                    borderRadius: 6
+                    backgroundColor: '#D97706',
+                    borderRadius: 8
                 }]
             },
             options: {
@@ -256,7 +337,7 @@
                 labels: sinfLabels,
                 datasets: [{
                     data: sinfCounts,
-                    backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4', '#6366F1', '#14B8A6']
+                    backgroundColor: ['#059669', '#0284C7', '#D97706', '#DB2777', '#7C3AED', '#0D9488', '#4F46E5', '#16A34A', '#E11D48']
                 }]
             },
             options: {
@@ -275,12 +356,12 @@
                 datasets: [{
                     data: data.top_iqtidorlar.map(x => x[1]),
                     backgroundColor: [
-                        'rgba(16, 185, 129, 0.7)',
-                        'rgba(59, 130, 246, 0.7)',
-                        'rgba(245, 158, 11, 0.7)',
-                        'rgba(236, 72, 153, 0.7)',
-                        'rgba(139, 92, 246, 0.7)',
-                        'rgba(6, 182, 212, 0.7)'
+                        'rgba(5, 150, 105, 0.75)',
+                        'rgba(2, 132, 199, 0.75)',
+                        'rgba(217, 119, 6, 0.75)',
+                        'rgba(219, 39, 119, 0.75)',
+                        'rgba(124, 58, 237, 0.75)',
+                        'rgba(13, 148, 136, 0.75)'
                     ]
                 }]
             },

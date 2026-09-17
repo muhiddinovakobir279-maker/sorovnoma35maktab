@@ -1,17 +1,22 @@
 {% extends "base.html" %}
 
-{% block title %}Maktab So'rovnomasi - Anketa to'ldirish{% endblock %}
+{% block title %}35-Maktab | O'quvchilar So'rovnomasi 2026{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto py-8 px-4 sm:px-6">
+<div class="max-w-3xl mx-auto py-6 sm:py-10 px-4 sm:px-6">
 
-    <!-- Language Selector Card -->
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mb-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div class="flex items-center space-x-2">
-            <i data-lucide="globe" class="w-5 h-5 text-emerald-600"></i>
-            <span class="text-sm font-semibold text-gray-700">So'rovnoma tilini tanlang / Выберите язык:</span>
+    <!-- Language Selector Pill -->
+    <div class="glass-card rounded-2xl p-3 sm:p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 border border-emerald-500/20 shadow-sm">
+        <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                <i data-lucide="languages" class="w-4 h-4"></i>
+            </div>
+            <div>
+                <span class="text-xs sm:text-sm font-bold text-gray-800" id="langBarTitle">So'rovnoma tili / Язык опроса:</span>
+                <span class="text-[11px] text-gray-400 block sm:inline sm:ml-1">O'zingizga qulay tilni tanlang</span>
+            </div>
         </div>
-        <div class="inline-flex rounded-xl p-1 bg-gray-100 border border-gray-200" role="group">
+        <div class="inline-flex rounded-xl p-1 bg-gray-100/90 border border-gray-200" role="group">
             <button type="button" onclick="setLanguage('uz')" id="langUzBtn" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-emerald-600 text-white shadow-sm">
                 🇺🇿 O'zbekcha
             </button>
@@ -21,207 +26,252 @@
         </div>
     </div>
 
-    <!-- Main Survey Card -->
-    <div id="surveyFormCard" class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+    <!-- Main Survey Wrapper -->
+    <div id="surveyFormCard" class="space-y-6">
         
-        <!-- Header Banner -->
-        <div class="bg-gradient-to-r from-emerald-600 to-teal-700 p-6 sm:p-8 text-white relative">
-            <div class="relative z-10">
-                <span class="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-semibold uppercase tracking-wider mb-2" id="headerTag">
-                    O'quvchilar anketasi
-                </span>
-                <h1 class="text-2xl sm:text-3xl font-extrabold" id="formMainTitle">
+        <!-- Hero Banner: Neo-Emerald Cosmic Header -->
+        <div class="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-950 via-emerald-950 to-teal-950 text-white p-7 sm:p-10 shadow-2xl border border-emerald-500/20">
+            <!-- Background Glow Orbs -->
+            <div class="absolute -top-16 -right-16 w-56 h-56 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-16 -left-16 w-56 h-56 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="relative z-10 space-y-3">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-md">
+                        <i data-lucide="school" class="w-3.5 h-3.5"></i>
+                        <span>35-SONLI UMUMIY O'RTA TA'LIM MAKTABI</span>
+                    </span>
+                    <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/10 text-emerald-100 backdrop-blur-md" id="headerTag">
+                        O'quvchilar anketasi
+                    </span>
+                </div>
+
+                <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white" id="formMainTitle">
                     O'quvchilarning qiziqish va iqtidorini aniqlash so'rovnomasi
                 </h1>
-                <p class="text-emerald-100 text-sm mt-2 max-w-xl" id="formMainSubtitle">
+
+                <p class="text-emerald-100/80 text-xs sm:text-sm leading-relaxed max-w-2xl" id="formMainSubtitle">
                     Hurmatli o'quvchi! Ushbu so'rovnoma sizning qiziqishlaringiz va kelajakdagi maqsadlaringizni aniqlash hamda yangi qiziqarli to'garaklar tashkil etish uchun xizmat qiladi.
                 </p>
+
+                <div class="pt-2 flex items-center space-x-4 text-[11px] text-emerald-200/70">
+                    <span class="flex items-center space-x-1"><i data-lucide="clock" class="w-3.5 h-3.5 text-emerald-400"></i><span>Davomiyligi: ~2 daqiqa</span></span>
+                    <span class="flex items-center space-x-1"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i><span>Xavfsiz & Rasmiy</span></span>
+                </div>
             </div>
-            <div class="absolute -bottom-6 -right-6 w-36 h-36 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+        </div>
+
+        <!-- Sticky Dynamic Progress Bar -->
+        <div class="sticky top-20 z-20 glass-card bg-white/95 backdrop-blur-md rounded-2xl p-3.5 border border-emerald-500/20 shadow-lg transition-all">
+            <div class="flex items-center justify-between text-xs font-bold text-gray-700 mb-2">
+                <span class="flex items-center space-x-1.5">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600"></i>
+                    <span id="progressLabel">To'ldirish ko'rsatkichi:</span>
+                </span>
+                <span id="progressPercent" class="font-mono text-emerald-700 font-extrabold text-sm">0%</span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden p-0.5 border border-gray-200">
+                <div id="surveyProgressBar" class="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 rounded-full transition-all duration-500 ease-out" style="width: 0%;"></div>
+            </div>
         </div>
 
         <!-- Survey Form -->
-        <form id="publicSurveyForm" onsubmit="submitSurvey(event)" class="p-6 sm:p-8 space-y-8">
+        <form id="publicSurveyForm" onsubmit="submitSurvey(event)" class="space-y-6">
             
-            <!-- 1. Shaxsiy ma'lumotlar -->
-            <div class="space-y-4">
-                <div class="flex items-center space-x-2 pb-2 border-b border-gray-100">
-                    <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center">1</span>
-                    <h2 class="text-base font-bold text-gray-900" id="section1Title">Shaxsiy ma'lumotlar</h2>
+            <!-- SECTION 1: Shaxsiy ma'lumotlar -->
+            <div class="glass-card bg-white rounded-3xl p-6 sm:p-8 border border-emerald-900/10 shadow-sm space-y-5">
+                <div class="flex items-center space-x-3 pb-3 border-b border-gray-100">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-700 font-extrabold text-sm flex items-center justify-center">
+                        1
+                    </div>
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-gray-900" id="section1Title">Shaxsiy ma'lumotlar</h2>
+                        <p class="text-xs text-gray-400">O'zingiz haqingizda asosiy ma'lumotlar</p>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <!-- F.I.Sh -->
                     <div class="sm:col-span-2">
-                        <label class="block text-xs font-bold text-gray-700 mb-1" id="labelFish">
+                        <label class="block text-xs font-bold text-gray-700 mb-1.5" id="labelFish">
                             Familiya, Ism, Sharifingiz (F.I.Sh.) <span class="text-red-500">*</span>
                         </label>
-                        <input id="formFish" type="text" required placeholder="Masalan: Kamalova Zarina Nisirovna" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                        <input id="formFish" type="text" required oninput="updateFormProgress()" placeholder="Masalan: Kamalova Zarina Nasirovna" class="w-full px-4 py-3 bg-gray-50/80 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all">
                     </div>
 
                     <!-- Sinf -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1" id="labelSinf">
+                        <label class="block text-xs font-bold text-gray-700 mb-1.5" id="labelSinf">
                             Sinfingiz <span class="text-red-500">*</span>
                         </label>
-                        <select id="formSinf" required class="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                        <select id="formSinf" required onchange="updateFormProgress()" class="w-full px-3.5 py-3 bg-gray-50/80 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-medium">
                             <option value="">Sinfingizni tanlang...</option>
-                            <optgroup label="5-sinflar">
-                                <option value="5-A">5-A</option><option value="5-B">5-B</option><option value="5-V">5-V</option><option value="5-G">5-G</option><option value="5-D">5-D</option><option value="5-O">5-O</option><option value="5-Ye">5-Ye</option><option value="5-I">5-I</option><option value="5-Z">5-Z</option>
-                            </optgroup>
-                            <optgroup label="6-sinflar">
-                                <option value="6-A">6-A</option><option value="6-B">6-B</option><option value="6-V">6-V</option><option value="6-G">6-G</option><option value="6-D">6-D</option><option value="6-Ye">6-Ye</option>
-                            </optgroup>
-                            <optgroup label="7-sinflar">
-                                <option value="7-A">7-A</option><option value="7-B">7-B</option><option value="7-V">7-V</option><option value="7-G">7-G</option><option value="7-D">7-D</option><option value="7-Ye">7-Ye</option><option value="7-O">7-O</option>
-                            </optgroup>
-                            <optgroup label="8-sinflar">
-                                <option value="8-A">8-A</option><option value="8-B">8-B</option><option value="8-V">8-V</option><option value="8-G">8-G</option><option value="8-D">8-D</option><option value="8-I">8-I</option><option value="8-Yo">8-Yo</option><option value="8-J">8-J</option><option value="8-Ye">8-Ye</option>
-                            </optgroup>
-                            <optgroup label="9-sinflar">
-                                <option value="9-A">9-A</option><option value="9-B">9-B</option><option value="9-V">9-V</option><option value="9-G">9-G</option><option value="9-D">9-D</option><option value="9-O">9-O</option><option value="9-Y">9-Y</option><option value="9-Ye">9-Ye</option><option value="9-I">9-I</option>
-                            </optgroup>
-                            <optgroup label="10-sinflar">
-                                <option value="10-A">10-A</option><option value="10-B">10-B</option><option value="10-V">10-V</option><option value="10-G">10-G</option><option value="10-D">10-D</option><option value="10-Yo">10-Yo</option>
-                            </optgroup>
-                            <optgroup label="11-sinflar">
-                                <option value="11-A">11-A</option><option value="11-B">11-B</option><option value="11-V">11-V</option><option value="11-G">11-G</option><option value="11-D">11-D</option><option value="11-I">11-I</option>
-                            </optgroup>
                         </select>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. Qiziqadigan fanlar -->
-            <div class="space-y-3">
-                <div class="flex items-center space-x-2 pb-2 border-b border-gray-100">
-                    <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center">2</span>
-                    <h2 class="text-base font-bold text-gray-900" id="section2Title">Qiziqadigan fanlaringiz</h2>
+            <!-- SECTION 2: Qiziqadigan fanlar -->
+            <div class="glass-card bg-white rounded-3xl p-6 sm:p-8 border border-emerald-900/10 shadow-sm space-y-4">
+                <div class="flex items-center space-x-3 pb-3 border-b border-gray-100">
+                    <div class="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-700 font-extrabold text-sm flex items-center justify-center">
+                        2
+                    </div>
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-gray-900" id="section2Title">Qiziqadigan fanlaringiz</h2>
+                        <p class="text-xs text-gray-400" id="section2Subtitle">O'zingizga yoqadigan bir yoki bir nechta fanni belgilang:</p>
+                    </div>
                 </div>
-                <p class="text-xs text-gray-500" id="section2Subtitle">O'zingizga yoqadigan bir yoki bir nechta fanni belgilang:</p>
 
-                <div id="fanlarContainer" class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
-                    <!-- Generated via JS for bilingual support -->
-                </div>
-            </div>
-
-            <!-- 3. Hozirgi to'garaklar -->
-            <div class="space-y-3">
-                <div class="flex items-center space-x-2 pb-2 border-b border-gray-100">
-                    <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center">3</span>
-                    <h2 class="text-base font-bold text-gray-900" id="section3Title">Hozirda qatnashayotgan to'garaklaringiz</h2>
-                </div>
-                <p class="text-xs text-gray-500" id="section3Subtitle">Hozir qaysi to'garak yoki qo'shimcha kurslarga qatnashasiz:</p>
-
-                <div id="togaraklarContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                    <!-- Generated via JS -->
+                <div id="fanlarContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1">
+                    <!-- Dynamic Choice Tiles -->
                 </div>
             </div>
 
-            <!-- 4. Iqtidor sohasi va Kelajak kasbi -->
-            <div class="space-y-4">
-                <div class="flex items-center space-x-2 pb-2 border-b border-gray-100">
-                    <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center">4</span>
-                    <h2 class="text-base font-bold text-gray-900" id="section4Title">Iqtidor sohasi va kelajak kasbingiz</h2>
+            <!-- SECTION 3: Hozirgi to'garaklar -->
+            <div class="glass-card bg-white rounded-3xl p-6 sm:p-8 border border-emerald-900/10 shadow-sm space-y-4">
+                <div class="flex items-center space-x-3 pb-3 border-b border-gray-100">
+                    <div class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-700 font-extrabold text-sm flex items-center justify-center">
+                        3
+                    </div>
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-gray-900" id="section3Title">Hozirda qatnashayotgan to'garaklaringiz</h2>
+                        <p class="text-xs text-gray-400" id="section3Subtitle">Hozir qaysi to'garak yoki qo'shimcha kurslarga qatnashasiz:</p>
+                    </div>
+                </div>
+
+                <div id="togaraklarContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    <!-- Dynamic Choice Tiles -->
+                </div>
+            </div>
+
+            <!-- SECTION 4: Iqtidor sohasi va Kelajak kasbi -->
+            <div class="glass-card bg-white rounded-3xl p-6 sm:p-8 border border-emerald-900/10 shadow-sm space-y-5">
+                <div class="flex items-center space-x-3 pb-3 border-b border-gray-100">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-700 font-extrabold text-sm flex items-center justify-center">
+                        4
+                    </div>
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-gray-900" id="section4Title">Iqtidor sohasi va kelajak kasbingiz</h2>
+                        <p class="text-xs text-gray-400">Kelajak maqsadlaringiz va qobiliyatingiz</p>
+                    </div>
                 </div>
 
                 <!-- Iqtidor -->
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1" id="labelIqtidor">
+                    <label class="block text-xs font-bold text-gray-700 mb-2" id="labelIqtidor">
                         O'zingizni ko'proq qaysi sohada iqtidorli deb hisoblaysiz?
                     </label>
-                    <div id="iqtidorContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                        <!-- Generated via JS -->
+                    <div id="iqtidorContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                        <!-- Dynamic Choice Tiles -->
                     </div>
                 </div>
 
                 <!-- Kasb -->
                 <div class="pt-2">
-                    <label class="block text-xs font-bold text-gray-700 mb-1" id="labelKasb">
+                    <label class="block text-xs font-bold text-gray-700 mb-1.5" id="labelKasb">
                         Kelajakda qaysi kasb egasi bo'lmoqchisiz?
                     </label>
-                    <input id="formKasb" type="text" list="surveyKasblarList" placeholder="Masalan: Dasturchi, Shifokor, Huquqshunos..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                    <input id="formKasb" type="text" oninput="updateFormProgress()" list="surveyKasblarList" placeholder="Masalan: Dasturchi, Shifokor, Huquqshunos..." class="w-full px-4 py-3 bg-gray-50/80 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all">
                     <datalist id="surveyKasblarList">
                         <option value="Dasturchi / IT mutaxassisi">
+                        <option value="Sun'iy intellekt muhandisi">
                         <option value="Shifokor (Врач)">
+                        <option value="Stomatolog / Jarroh">
                         <option value="Huquqshunos / Advokat">
                         <option value="O'qituvchi / Professor">
                         <option value="Tadbirkor / Ishbilarmon">
                         <option value="Me'mor / Dizayner">
-                        <option value="Sportchi">
-                        <option value="Harbiy xizmatchi">
+                        <option value="Sportchi (Professional)">
+                        <option value="Harbiy xizmatchi / IIV">
                         <option value="Bankir / Moliyachi">
                         <option value="Jurnalist / Bloger">
                         <option value="Uchuvchi (Pilot)">
-                        <option value="Diplomat">
+                        <option value="Diplomat / Xalqaro munosabatlar">
                     </datalist>
                 </div>
 
                 <!-- Startap -->
                 <div class="pt-2">
-                    <label class="block text-xs font-bold text-gray-700 mb-1" id="labelStartap">
+                    <label class="block text-xs font-bold text-gray-700 mb-1.5" id="labelStartap">
                         Sizda biror biznes yoki startap g'oyasi bormi?
                     </label>
-                    <select id="formStartapSelect" onchange="toggleStartupDesc()" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all mb-2">
+                    <select id="formStartapSelect" onchange="toggleStartupDesc()" class="w-full px-3.5 py-3 bg-gray-50/80 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all mb-2">
                         <option value="Yo'q">Yo'q</option>
                         <option value="Hozircha yo'q, lekin rejalashtiryapman">Hozircha yo'q, lekin rejalashtiryapman</option>
                         <option value="Ha, mavjud">Ha, mavjud</option>
                     </select>
-                    <textarea id="formStartapDesc" rows="2" placeholder="G'oyangiz haqida qisqacha yozing..." class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all hidden"></textarea>
+                    <textarea id="formStartapDesc" rows="2" placeholder="G'oyangiz haqida qisqacha yozing..." class="w-full px-4 py-2.5 bg-gray-50/80 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all hidden"></textarea>
                 </div>
             </div>
 
-            <!-- 5. Yangi to'garaklar taklifi va fikrlar -->
-            <div class="space-y-4">
-                <div class="flex items-center space-x-2 pb-2 border-b border-gray-100">
-                    <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center">5</span>
-                    <h2 class="text-base font-bold text-gray-900" id="section5Title">Yangi to'garaklar taklifi va istaklar</h2>
+            <!-- SECTION 5: Yangi to'garaklar taklifi va fikrlar -->
+            <div class="glass-card bg-white rounded-3xl p-6 sm:p-8 border border-emerald-900/10 shadow-sm space-y-5">
+                <div class="flex items-center space-x-3 pb-3 border-b border-gray-100">
+                    <div class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-700 font-extrabold text-sm flex items-center justify-center">
+                        5
+                    </div>
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-gray-900" id="section5Title">Yangi to'garaklar taklifi va istaklar</h2>
+                        <p class="text-xs text-gray-400" id="section5Subtitle">Maktabimizda qanday yangi to'garaklar ochilishini xohlardingiz:</p>
+                    </div>
                 </div>
 
-                <p class="text-xs text-gray-500" id="section5Subtitle">Maktabimizda qanday yangi to'garaklar ochilishini xohlardingiz:</p>
-
-                <div id="yangiTogaraklarContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                    <!-- Generated via JS -->
+                <div id="yangiTogaraklarContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    <!-- Dynamic Choice Tiles -->
                 </div>
 
                 <!-- Qo'shimcha takliflar -->
                 <div class="pt-2">
-                    <label class="block text-xs font-bold text-gray-700 mb-1" id="labelTakliflar">
+                    <label class="block text-xs font-bold text-gray-700 mb-1.5" id="labelTakliflar">
                         Maktab yoki to'garaklar bo'yicha qo'shimcha taklif va fikrlaringiz:
                     </label>
-                    <textarea id="formTakliflar" rows="3" placeholder="Masalan: To'garaklar vaqtini darslardan keyin qulay qilish, sport zallarini kengaytirish..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"></textarea>
+                    <textarea id="formTakliflar" rows="3" placeholder="Masalan: To'garaklar vaqtini darslardan keyin qulay qilish, sport zallarini kengaytirish..." class="w-full px-4 py-3 bg-gray-50/80 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"></textarea>
                 </div>
             </div>
 
-            <!-- Submit Button -->
-            <div class="pt-4 border-t border-gray-200">
-                <button type="submit" id="submitBtn" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base rounded-xl shadow-lg shadow-emerald-200 transition-all flex items-center justify-center space-x-2">
+            <!-- Submit Button Card -->
+            <div class="glass-card bg-white rounded-3xl p-6 border border-emerald-500/20 shadow-md">
+                <button type="submit" id="submitBtn" class="w-full py-4 bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-base sm:text-lg rounded-2xl shadow-xl shadow-emerald-600/25 transition-all duration-200 flex items-center justify-center space-x-2.5 hover:scale-[1.01] active:scale-[0.99]">
                     <i data-lucide="send" class="w-5 h-5"></i>
                     <span id="submitBtnText">So'rovnomani yuborish</span>
                 </button>
+                <p class="text-center text-[11px] text-gray-400 mt-2.5">
+                    Tugmani bosish orqali ma'lumotlaringiz maktab tahliliy tizimiga qabul qilinadi
+                </p>
             </div>
 
         </form>
     </div>
 
-    <!-- Success Screen (Hidden by default) -->
-    <div id="successCard" class="hidden bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center animate-fade-in">
-        <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-5 text-emerald-600">
+    <!-- Celebration Success Screen (Hidden by default) -->
+    <div id="successCard" class="hidden glass-card bg-white rounded-3xl shadow-2xl border border-emerald-500/20 p-8 sm:p-12 text-center animate-fade-in my-8">
+        <div class="w-20 h-20 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-3xl flex items-center justify-center mx-auto mb-6 text-emerald-600 shadow-inner">
             <i data-lucide="check-check" class="w-10 h-10"></i>
         </div>
-        <h2 class="text-2xl font-extrabold text-gray-900 mb-2" id="successTitle">Rahmat! Javoblaringiz qabul qilindi!</h2>
-        <p class="text-gray-600 text-sm max-w-md mx-auto mb-6" id="successDesc">
-            Sizning so'rovnomangiz muvaffaqiyatli saqlandi va maktab ma'lumotlar bazasiga kiritildi.
+        
+        <span class="inline-block px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full mb-3">
+            Qabul qilindi!
+        </span>
+
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2" id="successTitle">
+            Rahmat! Javoblaringiz muvaffaqiyatli saqlandi!
+        </h2>
+        
+        <p class="text-gray-600 text-sm max-w-md mx-auto mb-8" id="successDesc">
+            Sizning qiziqishlaringiz va takliflaringiz maktab ma'muriyati hamda to'garak rahbarlari tomonidan albatta inobatga olinadi.
         </p>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 max-w-xs mx-auto mb-6">
-            <span class="text-xs text-gray-500 block mb-1">Sizning unikal kodingiz (Fingerprint):</span>
-            <span id="successFingerprint" class="font-mono text-xl font-bold text-emerald-800">FP000000</span>
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-5 max-w-sm mx-auto mb-8 shadow-sm">
+            <span class="text-xs text-gray-500 block mb-1">Sizning unikal ishtirokchi kodingiz (Fingerprint):</span>
+            <span id="successFingerprint" class="font-mono text-2xl font-black text-emerald-800 tracking-wider">FP000000</span>
+            <span class="text-[10px] text-gray-400 block mt-1">Ushbu kod sizning anketangizni tasdiqlaydi</span>
         </div>
 
         <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button onclick="resetSurveyForm()" class="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md shadow-emerald-200">
-                Yana so'rovnoma to'ldirish
+            <button onclick="resetSurveyForm()" class="w-full sm:w-auto px-7 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-emerald-200 flex items-center justify-center space-x-2">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Yana so'rovnoma to'ldirish</span>
             </button>
         </div>
     </div>
@@ -246,13 +296,14 @@
     const LANG_DATA = {
         uz: {
             tilName: "O'zbek",
+            langBarTitle: "So'rovnoma tili / Язык опроса:",
             headerTag: "O'quvchilar anketasi",
             mainTitle: "O'quvchilarning qiziqish va iqtidorini aniqlash so'rovnomasi",
             mainSubtitle: "Hurmatli o'quvchi! Ushbu so'rovnoma sizning qiziqishlaringiz va kelajakdagi maqsadlaringizni aniqlash hamda yangi to'garaklar tashkil etish uchun xizmat qiladi.",
+            progressLabel: "To'ldirish ko'rsatkichi:",
             section1Title: "Shaxsiy ma'lumotlar",
             labelFish: "Familiya, Ism, Sharifingiz (F.I.Sh.)",
             labelSinf: "Sinfingiz",
-            sinfOptions: ["5-sinf", "6-sinf", "7-sinf", "8-sinf", "9-sinf", "10-sinf", "11-sinf"],
             section2Title: "Qiziqadigan fanlaringiz",
             section2Subtitle: "O'zingizga yoqadigan bir yoki bir nechta fanni belgilang:",
             fanlar: [
@@ -311,17 +362,20 @@
                 "Ekologiya va atrof-muhit muhofazasi"
             ],
             labelTakliflar: "Maktab yoki to'garaklar bo'yicha qo'shimcha taklif va fikrlaringiz:",
-            submitBtn: "So'rovnomani yuborish"
+            submitBtn: "So'rovnomani yuborish",
+            successTitle: "Rahmat! Javoblaringiz qabul qilindi!",
+            successDesc: "Sizning so'rovnomangiz muvaffaqiyatli saqlandi va maktab ma'lumotlar bazasiga kiritildi."
         },
         ru: {
             tilName: "Русский",
+            langBarTitle: "Язык опроса / So'rovnoma tili:",
             headerTag: "Анкета для учащихся",
             mainTitle: "Опрос по определению интересов и талантов учащихся",
             mainSubtitle: "Уважаемый ученик! Этот опрос поможет определить твои интересы, цели на будущее и организовать новые кружки в нашей школе.",
+            progressLabel: "Индикатор заполнения:",
             section1Title: "Личные данные",
             labelFish: "Фамилия, Имя, Отчество (Ф.И.О.)",
             labelSinf: "Ваш класс",
-            sinfOptions: ["5-класс", "6-класс", "7-класс", "8-класс", "9-класс", "10-класс", "11-класс"],
             section2Title: "Интересующие предметы",
             section2Subtitle: "Отметьте предметы, которые вам наиболее интересны:",
             fanlar: [
@@ -380,7 +434,9 @@
                 "Экология и охрана окружающей среды"
             ],
             labelTakliflar: "Дополнительные пожелания и предложения:",
-            submitBtn: "Отправить анкету"
+            submitBtn: "Отправить анкету",
+            successTitle: "Спасибо! Ваши ответы приняты!",
+            successDesc: "Ваша анкета успешно сохранена и добавлена в базу данных школы."
         }
     };
 
@@ -400,11 +456,24 @@
         renderLanguageContent();
     }
 
+    function renderChoiceTiles(containerId, name, items) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        container.innerHTML = items.map((item, idx) => `
+            <label class="choice-tile flex items-center space-x-3 p-3 rounded-2xl border border-gray-200/90 bg-gray-50/60 hover:bg-emerald-50/50 hover:border-emerald-300 cursor-pointer transition-all duration-200 select-none">
+                <input type="checkbox" name="${name}" value="${item}" onchange="updateFormProgress()" class="rounded-lg border-gray-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4 transition-all">
+                <span class="text-xs font-medium text-gray-700 leading-snug">${item}</span>
+            </label>
+        `).join('');
+    }
+
     function renderLanguageContent() {
         const d = LANG_DATA[currentLang];
         document.getElementById('headerTag').textContent = d.headerTag;
         document.getElementById('formMainTitle').textContent = d.mainTitle;
         document.getElementById('formMainSubtitle').textContent = d.mainSubtitle;
+        document.getElementById('progressLabel').textContent = d.progressLabel;
 
         document.getElementById('section1Title').textContent = d.section1Title;
         document.getElementById('labelFish').innerHTML = `${d.labelFish} <span class="text-red-500">*</span>`;
@@ -425,38 +494,20 @@
         sinfSelect.innerHTML = sinfHtml;
         if (currentSinfVal) sinfSelect.value = currentSinfVal;
 
-        // Fanlar
+        // Section 2: Fanlar
         document.getElementById('section2Title').textContent = d.section2Title;
         document.getElementById('section2Subtitle').textContent = d.section2Subtitle;
-        const fanContainer = document.getElementById('fanlarContainer');
-        fanContainer.innerHTML = d.fanlar.map((item, i) => `
-            <label class="flex items-center space-x-2 p-2.5 rounded-xl border border-gray-200 hover:border-emerald-400 bg-gray-50/70 hover:bg-emerald-50/40 cursor-pointer transition-colors text-xs font-medium text-gray-700 select-none">
-                <input type="checkbox" name="fanlar" value="${item}" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4">
-                <span>${item}</span>
-            </label>
-        `).join('');
+        renderChoiceTiles('fanlarContainer', 'fanlar', d.fanlar);
 
-        // Togaraklar
+        // Section 3: Togaraklar
         document.getElementById('section3Title').textContent = d.section3Title;
         document.getElementById('section3Subtitle').textContent = d.section3Subtitle;
-        const togContainer = document.getElementById('togaraklarContainer');
-        togContainer.innerHTML = d.togaraklar.map(item => `
-            <label class="flex items-center space-x-2 p-2.5 rounded-xl border border-gray-200 hover:border-emerald-400 bg-gray-50/70 hover:bg-emerald-50/40 cursor-pointer transition-colors text-xs font-medium text-gray-700 select-none">
-                <input type="checkbox" name="togaraklar" value="${item}" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4">
-                <span>${item}</span>
-            </label>
-        `).join('');
+        renderChoiceTiles('togaraklarContainer', 'togaraklar', d.togaraklar);
 
-        // Iqtidor
+        // Section 4: Iqtidor
         document.getElementById('section4Title').textContent = d.section4Title;
         document.getElementById('labelIqtidor').textContent = d.labelIqtidor;
-        const iqtContainer = document.getElementById('iqtidorContainer');
-        iqtContainer.innerHTML = d.iqtidorlar.map(item => `
-            <label class="flex items-center space-x-2 p-2.5 rounded-xl border border-gray-200 hover:border-emerald-400 bg-gray-50/70 hover:bg-emerald-50/40 cursor-pointer transition-colors text-xs font-medium text-gray-700 select-none">
-                <input type="checkbox" name="iqtidor" value="${item}" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4">
-                <span>${item}</span>
-            </label>
-        `).join('');
+        renderChoiceTiles('iqtidorContainer', 'iqtidor', d.iqtidorlar);
 
         // Kasb
         document.getElementById('labelKasb').textContent = d.labelKasb;
@@ -467,20 +518,17 @@
         const startapSelect = document.getElementById('formStartapSelect');
         startapSelect.innerHTML = d.startapOptions.map(opt => `<option value="${opt.val}">${opt.text}</option>`).join('');
 
-        // Yangi togaraklar
+        // Section 5: Yangi togaraklar
         document.getElementById('section5Title').textContent = d.section5Title;
         document.getElementById('section5Subtitle').textContent = d.section5Subtitle;
-        const ytContainer = document.getElementById('yangiTogaraklarContainer');
-        ytContainer.innerHTML = d.yangiTogaraklar.map(item => `
-            <label class="flex items-center space-x-2 p-2.5 rounded-xl border border-gray-200 hover:border-emerald-400 bg-gray-50/70 hover:bg-emerald-50/40 cursor-pointer transition-colors text-xs font-medium text-gray-700 select-none">
-                <input type="checkbox" name="yangi_togaraklar" value="${item}" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4">
-                <span>${item}</span>
-            </label>
-        `).join('');
+        renderChoiceTiles('yangiTogaraklarContainer', 'yangi_togaraklar', d.yangiTogaraklar);
 
         // Takliflar
         document.getElementById('labelTakliflar').textContent = d.labelTakliflar;
         document.getElementById('submitBtnText').textContent = d.submitBtn;
+
+        updateFormProgress();
+        lucide.createIcons();
     }
 
     function toggleStartupDesc() {
@@ -491,6 +539,33 @@
         } else {
             desc.classList.add('hidden');
         }
+        updateFormProgress();
+    }
+
+    function updateFormProgress() {
+        const fish = document.getElementById('formFish')?.value.trim() || '';
+        const sinf = document.getElementById('formSinf')?.value.trim() || '';
+        const kasb = document.getElementById('formKasb')?.value.trim() || '';
+        
+        const fanlarChecked = document.querySelectorAll('input[name="fanlar"]:checked').length;
+        const togChecked = document.querySelectorAll('input[name="togaraklar"]:checked').length;
+        const iqtChecked = document.querySelectorAll('input[name="iqtidor"]:checked').length;
+        const ytChecked = document.querySelectorAll('input[name="yangi_togaraklar"]:checked').length;
+
+        let score = 0;
+        if (fish.length >= 3) score += 20;
+        if (sinf) score += 20;
+        if (fanlarChecked > 0) score += 20;
+        if (togChecked > 0) score += 15;
+        if (iqtChecked > 0 || kasb.length > 2) score += 15;
+        if (ytChecked > 0) score += 10;
+
+        score = Math.min(100, score);
+
+        const bar = document.getElementById('surveyProgressBar');
+        const text = document.getElementById('progressPercent');
+        if (bar) bar.style.width = score + '%';
+        if (text) text.textContent = score + '%';
     }
 
     async function submitSurvey(e) {
@@ -554,6 +629,8 @@
             if (result.status === 'success') {
                 document.getElementById('surveyFormCard').classList.add('hidden');
                 document.getElementById('successFingerprint').textContent = result.data.fingerprint;
+                document.getElementById('successTitle').textContent = LANG_DATA[currentLang].successTitle;
+                document.getElementById('successDesc').textContent = LANG_DATA[currentLang].successDesc;
                 document.getElementById('successCard').classList.remove('hidden');
                 lucide.createIcons();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -581,6 +658,7 @@
         btn.disabled = false;
         btn.innerHTML = `<i data-lucide="send" class="w-5 h-5"></i> <span>${LANG_DATA[currentLang].submitBtn}</span>`;
         lucide.createIcons();
+        updateFormProgress();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 

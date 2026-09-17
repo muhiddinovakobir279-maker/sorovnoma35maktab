@@ -1,6 +1,8 @@
+let rawEntries = [];
 let currentEntries = [];
 let currentViewedId = null;
 let searchTimeout = null;
+let activeTalentCategory = '';
 
 document.addEventListener('DOMContentLoaded', () => {
     loadEntries();
@@ -22,13 +24,91 @@ async function loadEntries() {
         const res = await fetch(`/api/entries?${params.toString()}`);
         const result = await res.json();
         if (result.status === 'success') {
-            currentEntries = result.data;
-            renderTable(currentEntries);
+            rawEntries = result.data;
+            applyTalentFilterAndRender();
         }
     } catch (err) {
         console.error("Ma'lumot yuklashda xatolik:", err);
         showToast("Ma'lumotlarni yuklab bo'lmadi", "error");
     }
+}
+
+function onClassFilterChange() {
+    const sinf = document.getElementById('filterSinf')?.value;
+    const btnText = document.getElementById('btnClassExportText');
+    const btn = document.getElementById('btnClassExport');
+
+    if (sinf) {
+        if (btnText) btnText.textContent = `${sinf} Excel yuklash`;
+        if (btn) {
+            btn.className = "px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md shadow-emerald-200 flex items-center space-x-1.5 transition-all";
+        }
+    } else {
+        if (btnText) btnText.textContent = "Excel yuklash";
+        if (btn) {
+            btn.className = "px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold text-xs sm:text-sm rounded-xl flex items-center space-x-1.5 transition-all";
+        }
+    }
+
+    loadEntries();
+}
+
+function exportFilteredExcel() {
+    const sinf = document.getElementById('filterSinf')?.value || '';
+    if (sinf) {
+        window.location.href = `/export/excel?sinf=${encodeURIComponent(sinf)}`;
+    } else {
+        window.location.href = '/export/excel';
+    }
+}
+
+function setTalentFilter(category) {
+    activeTalentCategory = category;
+
+    const tabs = {
+        '': 'tabTalentAll',
+        'it': 'tabTalentIT',
+        'tibbiyot': 'tabTalentMed',
+        'sport': 'tabTalentSport',
+        'biznes': 'tabTalentBiz',
+        'sanat': 'tabTalentArt'
+    };
+
+    Object.entries(tabs).forEach(([cat, id]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (cat === category) {
+            el.className = "px-3 py-1.5 rounded-xl font-bold bg-emerald-600 text-white shadow-sm transition-all whitespace-nowrap";
+        } else {
+            el.className = "px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-all whitespace-nowrap";
+        }
+    });
+
+    applyTalentFilterAndRender();
+}
+
+function applyTalentFilterAndRender() {
+    if (!activeTalentCategory) {
+        currentEntries = [...rawEntries];
+    } else {
+        currentEntries = rawEntries.filter(item => {
+            const str = `${item.iqtidor} ${item.kasb} ${item.yangi_togaraklar} ${item.fanlar} ${item.togaraklar}`.toLowerCase();
+            if (activeTalentCategory === 'it') {
+                return str.includes('it') || str.includes('dastur') || str.includes('robot') || str.includes('veb') || str.includes('informatika');
+            } else if (activeTalentCategory === 'tibbiyot') {
+                return str.includes('shifokor') || str.includes('tibbiyot') || str.includes('vrach') || str.includes('biologiya') || str.includes('kimyo') || str.includes('jarroh') || str.includes('stomatolog');
+            } else if (activeTalentCategory === 'sport') {
+                return str.includes('sport') || str.includes('harbiy') || str.includes('futbol') || str.includes('shaxmat') || str.includes('basketbol') || str.includes('jismoniy');
+            } else if (activeTalentCategory === 'biznes') {
+                return str.includes('biznes') || str.includes('tadbirkor') || str.includes('startap') || str.includes('moliya') || str.includes('iqtisod') || str.includes('bank') || str.includes('yetakchilik');
+            } else if (activeTalentCategory === 'sanat') {
+                return str.includes('san'at') || str.includes('sanat') || str.includes('rasm') || str.includes('musiqa') || str.includes('dizayn') || str.includes('raqs') || str.includes('ijod');
+            }
+            return true;
+        });
+    }
+
+    renderTable(currentEntries);
 }
 
 function renderTable(entries) {
@@ -56,46 +136,46 @@ function renderTable(entries) {
     let html = '';
     entries.forEach((item, index) => {
         const tilBadge = item.til === 'Русский' 
-            ? '<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">Русский</span>'
-            : '<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">O\'zbek</span>';
+            ? '<span class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">Русский</span>'
+            : '<span class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">O'zbek</span>';
 
-        const sinfBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 text-gray-800 border border-gray-200">${escapeHtml(item.sinf)}</span>`;
+        const sinfBadge = `<span class="px-2.5 py-0.5 rounded-lg text-[11px] font-extrabold bg-gray-100 text-gray-800 border border-gray-200">${escapeHtml(item.sinf)}</span>`;
 
         html += `
         <tr class="sheet-row border-b border-gray-200 transition-colors bg-white">
-            <td class="px-2 py-2 text-center text-gray-400 font-mono text-[11px] bg-gray-50 select-none">${index + 1}</td>
-            <td class="px-3 py-2 text-gray-600 font-mono text-[11px]">${escapeHtml(item.timestamp)}</td>
-            <td class="px-3 py-2">
-                <span onclick="copyToClipboard('${escapeHtml(item.fingerprint)}')" class="cursor-pointer font-mono font-bold text-[11px] text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-200" title="Nusxa olish uchun bosing">
+            <td class="px-2 py-2.5 text-center text-gray-400 font-mono text-[11px] bg-gray-50 select-none">${index + 1}</td>
+            <td class="px-3 py-2.5 text-gray-600 font-mono text-[11px]">${escapeHtml(item.timestamp)}</td>
+            <td class="px-3 py-2.5">
+                <span onclick="copyToClipboard('${escapeHtml(item.fingerprint)}')" class="cursor-pointer font-mono font-bold text-[11px] text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-200" title="Nusxa olish uchun bosing">
                     ${escapeHtml(item.fingerprint)}
                 </span>
             </td>
-            <td class="px-3 py-2">${tilBadge}</td>
-            <td class="px-3 py-2">
-                <button onclick="viewEntry(${item.id})" class="font-semibold text-gray-900 hover:text-emerald-600 text-left transition-colors truncate max-w-[200px] block" title="${escapeHtml(item.fish)}">
+            <td class="px-3 py-2.5">${tilBadge}</td>
+            <td class="px-3 py-2.5">
+                <button onclick="viewEntry(${item.id})" class="font-bold text-gray-900 hover:text-emerald-600 text-left transition-colors truncate max-w-[200px] block" title="${escapeHtml(item.fish)}">
                     ${escapeHtml(item.fish)}
                 </button>
             </td>
-            <td class="px-3 py-2">${sinfBadge}</td>
-            <td class="px-3 py-2 text-gray-700 truncate max-w-[220px]" title="${escapeHtml(item.fanlar)}">${escapeHtml(item.fanlar) || '-'}</td>
-            <td class="px-3 py-2 text-gray-700 truncate max-w-[220px]" title="${escapeHtml(item.togaraklar)}">${escapeHtml(item.togaraklar) || '-'}</td>
-            <td class="px-3 py-2 text-gray-700 truncate max-w-[220px]" title="${escapeHtml(item.iqtidor)}">${escapeHtml(item.iqtidor) || '-'}</td>
-            <td class="px-3 py-2 font-medium text-blue-800 truncate max-w-[180px]" title="${escapeHtml(item.kasb)}">
+            <td class="px-3 py-2.5">${sinfBadge}</td>
+            <td class="px-3 py-2.5 text-gray-700 truncate max-w-[220px]" title="${escapeHtml(item.fanlar)}">${escapeHtml(item.fanlar) || '-'}</td>
+            <td class="px-3 py-2.5 text-gray-700 truncate max-w-[220px]" title="${escapeHtml(item.togaraklar)}">${escapeHtml(item.togaraklar) || '-'}</td>
+            <td class="px-3 py-2.5 text-gray-700 truncate max-w-[220px]" title="${escapeHtml(item.iqtidor)}">${escapeHtml(item.iqtidor) || '-'}</td>
+            <td class="px-3 py-2.5 font-semibold text-blue-800 truncate max-w-[180px]" title="${escapeHtml(item.kasb)}">
                 ${escapeHtml(item.kasb) || '-'}
             </td>
-            <td class="px-3 py-2 text-gray-600 truncate max-w-[220px]" title="${escapeHtml(item.startap)}">${escapeHtml(item.startap) || '-'}</td>
-            <td class="px-3 py-2 text-emerald-800 font-medium truncate max-w-[240px]" title="${escapeHtml(item.yangi_togaraklar)}">${escapeHtml(item.yangi_togaraklar) || '-'}</td>
-            <td class="px-3 py-2 text-gray-600 truncate max-w-[220px]" title="${escapeHtml(item.takliflar)}">${escapeHtml(item.takliflar) || '-'}</td>
-            <td class="px-2 py-2 text-center sticky right-0 bg-white border-l border-gray-200">
+            <td class="px-3 py-2.5 text-gray-600 truncate max-w-[220px]" title="${escapeHtml(item.startap)}">${escapeHtml(item.startap) || '-'}</td>
+            <td class="px-3 py-2.5 text-emerald-800 font-semibold truncate max-w-[240px]" title="${escapeHtml(item.yangi_togaraklar)}">${escapeHtml(item.yangi_togaraklar) || '-'}</td>
+            <td class="px-3 py-2.5 text-gray-600 truncate max-w-[220px]" title="${escapeHtml(item.takliflar)}">${escapeHtml(item.takliflar) || '-'}</td>
+            <td class="px-2 py-2.5 text-center sticky right-0 bg-white border-l border-gray-200 shadow-sm">
                 <div class="flex items-center justify-center space-x-1">
-                    <button onclick="viewEntry(${item.id})" class="p-1 text-gray-500 hover:text-emerald-600 hover:bg-gray-100 rounded" title="Batafsil">
-                        <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                    <button onclick="viewEntry(${item.id})" class="p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors" title="Batafsil">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
                     </button>
-                    <button onclick="editEntry(${item.id})" class="p-1 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded" title="Tahrirlash">
-                        <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                    <button onclick="editEntry(${item.id})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Tahrirlash">
+                        <i data-lucide="edit-3" class="w-4 h-4"></i>
                     </button>
-                    <button onclick="deleteEntry(${item.id})" class="p-1 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded" title="O'chirish">
-                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <button onclick="deleteEntry(${item.id})" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="O'chirish">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
                 </div>
             </td>
@@ -131,7 +211,7 @@ function clearSearch() {
 function openAddModal() {
     document.getElementById('entryForm').reset();
     document.getElementById('entryId').value = '';
-    document.getElementById('modalTitle').textContent = 'Yangi Ma\'lumot Kiritish';
+    document.getElementById('modalTitle').textContent = 'Yangi Ma'lumot Kiritish';
     document.getElementById('modalIcon').setAttribute('data-lucide', 'user-plus');
     lucide.createIcons();
     document.getElementById('entryModal').classList.remove('hidden');
@@ -292,7 +372,8 @@ async function confirmClearAll() {
         showToast("Jadval allaqachon bo'sh", "info");
         return;
     }
-    const check = prompt("DIQQAT: Jadvaldagi barcha ma'lumotlar butunlay o'chiriladi!\nDavom etish uchun 'TOZALASH' so'zini yozing:");
+    const check = prompt("DIQQAT: Jadvaldagi barcha ma'lumotlar butunlay o'chiriladi!
+Davom etish uchun 'TOZALASH' so'zini yozing:");
     if (check && check.trim().toUpperCase() === 'TOZALASH') {
         try {
             const res = await fetch('/api/clear', { method: 'POST' });
@@ -343,7 +424,7 @@ function clientExcelExport() {
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Natijalar");
-    XLSX.writeFile(wb, `Sorovnoma_Natijalar_${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.writeFile(wb, `Sorovnoma_35maktab_${new Date().toISOString().slice(0,10)}.xlsx`);
     showToast("Excel fayli tayyorlandi!", "success");
 }
 

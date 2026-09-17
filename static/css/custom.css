@@ -1,12 +1,72 @@
-/* Custom styling for Google Sheets look and feel */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* 35-maktab Zamonaviy Neo-Emerald Dizayn Uslubi */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #f8fafc;
+    background-image: 
+        radial-gradient(circle at 12% 12%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 88% 85%, rgba(13, 148, 136, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(5, 150, 105, 0.03) 0%, transparent 60%);
+    background-attachment: fixed;
 }
 
 code, kbd, samp, pre {
     font-family: 'JetBrains Mono', monospace;
+}
+
+/* Tech pattern background for hero banners */
+.bg-tech-pattern {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+/* Glassmorphism */
+.glass-nav {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+/* Interactive Choice Tile Styling via :has selector */
+.choice-tile {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1.5px solid #e2e8f0;
+    background: #ffffff;
+}
+
+.choice-tile:hover {
+    border-color: #34d399;
+    background-color: #f0fdf4;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.12);
+}
+
+.choice-tile:has(input:checked) {
+    border-color: #059669 !important;
+    background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%) !important;
+    color: #064e3b !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 14px -2px rgba(5, 150, 105, 0.22) !important;
+    transform: translateY(-1px);
+}
+
+.choice-tile:has(input:checked) .custom-checkbox {
+    background-color: #059669 !important;
+    border-color: #059669 !important;
+    color: #ffffff !important;
+}
+
+/* Progress bar transition */
+.progress-bar-fill {
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Custom Scrollbars */
@@ -18,19 +78,53 @@ code, kbd, samp, pre {
     background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
+    background: #94a3b8;
+    border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+    background: #64748b;
 }
 
-/* Subtle animation */
+/* Animations */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fade-in {
-    animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Print CSS for Official Reports */
+@media print {
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-size: 11pt;
+    }
+    header, footer, .no-print, #exportMenu, #filterContainer, .dropdown, button {
+        display: none !important;
+    }
+    .print-only {
+        display: block !important;
+    }
+    .sheet-container {
+        overflow: visible !important;
+        max-height: none !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    th, td {
+        border: 1px solid #94a3b8 !important;
+        padding: 4px 6px !important;
+        font-size: 9pt !important;
+    }
+    @page {
+        size: A4 landscape;
+        margin: 1cm;
+    }
 }
