@@ -59,6 +59,59 @@ def init_db():
 
 init_db()
 
+GOOGLE_SHEET_CSV_URL = os.environ.get(
+    'GOOGLE_SHEET_CSV_URL', 
+    'https://docs.google.com/spreadsheets/d/1s3sTJj9TG6-2SXb5dj38d3yh0LQDejpNkNMCqf3lX6U/export?format=csv&gid=1889058394'
+)
+GOOGLE_SHEET_WEBHOOK_URL = os.environ.get('GOOGLE_SHEET_WEBHOOK_URL', '')
+
+def sync_from_google_sheet():
+    if not GOOGLE_SHEET_CSV_URL:
+        return 0
+    try:
+        import urllib.request
+        req = urllib.request.Request(GOOGLE_SHEET_CSV_URL, headers={'User-Agent': 'Mozilla/5.0'})
+        sheet_data = urllib.request.urlopen(req, timeout=12).read().decode('utf-8')
+        reader = list(csv.reader(io.StringIO(sheet_data)))
+        sheet_rows = reader[1:]
+
+        conn = get_db()
+        existing = conn.execute("SELECT fingerprint, fish, sinf, timestamp FROM sorovnoma").fetchall()
+        seen_fps = {r['fingerprint'] for r in existing if r['fingerprint']}
+        seen_keys = {(r['fish'].strip().lower(), r['sinf'].strip(), r['timestamp'].strip()) for r in existing if r['fish']}
+
+        added = 0
+        for r in sheet_rows:
+            if not r or len(r) < 5:
+                continue
+            while len(r) < 12:
+                r.append('')
+            ts, fp, til, fish, sinf, fan, tog, iqt, kasb, startap, yt, taklif = [x.strip() for x in r[:12]]
+            if not fish:
+                continue
+            key = (fish.lower(), sinf, ts)
+            if fp and fp in seen_fps:
+                continue
+            if key in seen_keys:
+                continue
+
+            conn.execute("""
+                INSERT INTO sorovnoma (timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (ts, fp, til or "O'zbek", fish, sinf, fan, tog, iqt, kasb, startap, yt, taklif))
+            added += 1
+            if fp:
+                seen_fps.add(fp)
+            seen_keys.add(key)
+
+        if added > 0:
+            conn.commit()
+        conn.close()
+        return added
+    except Exception as e:
+        print(f"Google Sheet auto-sync error: {e}")
+        return 0
+
 def generate_fingerprint():
     chars = string.ascii_uppercase + string.digits
     suffix = ''.join(random.choices(chars, k=6))
@@ -367,6 +420,35 @@ def add_entry():
     conn.commit()
     conn.close()
 
+    # Webhook orqali Google Sheet'ga ham bir vaqtda saqlash
+    if GOOGLE_SHEET_WEBHOOK_URL:
+        try:
+            import urllib.request
+            import json
+            hook_data = {
+                'id': new_id,
+                'timestamp': timestamp,
+                'fingerprint': fingerprint,
+                'til': til,
+                'fish': fish,
+                'sinf': sinf,
+                'fanlar': fanlar,
+                'togaraklar': togaraklar,
+                'iqtidor': iqtidor,
+                'kasb': kasb,
+                'startap': startap,
+                'yangi_togaraklar': yangi_togaraklar,
+                'takliflar': takliflar
+            }
+            req_hook = urllib.request.Request(
+                GOOGLE_SHEET_WEBHOOK_URL,
+                data=json.dumps(hook_data).encode('utf-8'),
+                headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'}
+            )
+            urllib.request.urlopen(req_hook, timeout=4)
+        except Exception as err:
+            print(f"Google Sheet webhook sync error: {err}")
+
     return jsonify({
         'status': 'success',
         'message': "Ma'lumot muvaffaqiyatli saqlandi!",
@@ -386,6 +468,16 @@ def add_entry():
             'takliflar': takliflar
         }
     }), 201
+
+@app.route('/api/sync-google-sheet', methods=['POST'])
+@admin_required
+def api_sync_google_sheet():
+    added = sync_from_google_sheet()
+    return jsonify({
+        'status': 'success',
+        'message': f"Google Sheet bilan muvaffaqiyatli sinxronlandi! Yangi qo'shilgan yozuvlar: {added} ta.",
+        'added': added
+    })
 
 @app.route('/api/entries/<int:entry_id>', methods=['GET'])
 @admin_required

@@ -40,6 +40,35 @@ async function loadEntries() {
     }
 }
 
+async function syncGoogleSheet() {
+    const btn = document.getElementById('btnSyncSheet');
+    const origHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-600"></i> <span>Sinxronlanmoqda...</span>';
+        btn.disabled = true;
+        lucide.createIcons();
+    }
+    try {
+        const res = await fetch('/api/sync-google-sheet', { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'success') {
+            showToast(data.message, 'success');
+            await loadEntries();
+        } else {
+            showToast(data.message || 'Sinxronlashda xatolik', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showToast("Google Sheet bilan bog'lanishda xatolik", 'error');
+    } finally {
+        if (btn) {
+            btn.innerHTML = origHtml;
+            btn.disabled = false;
+            lucide.createIcons();
+        }
+    }
+}
+
 function onClassFilterChange() {
     const sinf = document.getElementById('filterSinf')?.value;
     const btnText = document.getElementById('btnClassExportText');

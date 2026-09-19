@@ -103,6 +103,11 @@
                     <span class="hidden sm:inline">Chop etish (A4)</span>
                 </button>
 
+                <button onclick="syncGoogleSheet()" id="btnSyncSheet" class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-semibold text-xs sm:text-sm rounded-xl shadow-sm flex items-center space-x-1.5 transition-all" title="Google Sheet bilan jonli sinxronlash">
+                    <i data-lucide="sheet" class="w-4 h-4 text-emerald-600"></i>
+                    <span class="hidden lg:inline">Google Sheet sinxronlash</span>
+                </button>
+
                 <button onclick="loadEntries()" class="p-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 rounded-xl shadow-sm transition-all" title="Qayta yangilash">
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                 </button>
@@ -488,5 +493,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/main.js?v=20260917_0930"></script>
+<script src="/static/js/main.js?v=20260919_0855"></script>
 {% endblock %}
