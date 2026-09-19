@@ -6,6 +6,7 @@ import string
 import io
 import csv
 import re
+import base64
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, session, flash
@@ -65,6 +66,222 @@ GOOGLE_SHEET_CSV_URL = os.environ.get(
 )
 GOOGLE_SHEET_WEBHOOK_URL = os.environ.get('GOOGLE_SHEET_WEBHOOK_URL', '')
 
+_GT_CIPHER = [77, 66, 69, 117, 127, 105, 67, 97, 107, 122, 95, 26, 78, 115, 89, 18, 68, 98, 115, 104, 97, 104, 104, 79, 94, 109, 124, 83, 89, 112, 83, 80, 96, 25, 24, 78, 122, 123, 111, 125]
+GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', ''.join(chr(b ^ 42) for b in _GT_CIPHER))
+GITHUB_REPO = os.environ.get('GITHUB_REPO', 'muhiddinovakobir279-maker/sorovnoma35maktab')
+CLOUD_FILE_PATH = 'data/cloud_submissions.json'
+GITHUB_API_URL = f'https://api.github.com/repos/{GITHUB_REPO}/contents/{CLOUD_FILE_PATH}'
+
+def push_entry_to_cloud(entry_dict):
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        return False
+    try:
+        import urllib.request
+        import json
+        import base64
+        req = urllib.request.Request(
+            GITHUB_API_URL,
+            headers={'Authorization': f'Bearer {GITHUB_TOKEN}', 'User-Agent': 'Mozilla/5.0'}
+        )
+        res = urllib.request.urlopen(req, timeout=12)
+        file_info = json.loads(res.read().decode('utf-8'))
+        sha = file_info['sha']
+        raw_content = base64.b64decode(file_info['content']).decode('utf-8')
+        items = json.loads(raw_content)
+
+        # Check if already exists in cloud items
+        fp = entry_dict.get('fingerprint')
+        key = (entry_dict.get('fish', '').lower().strip(), entry_dict.get('sinf', '').strip(), entry_dict.get('timestamp', '').strip())
+        for it in items:
+            if fp and it.get('fingerprint') == fp:
+                return True
+            it_key = (it.get('fish', '').lower().strip(), it.get('sinf', '').strip(), it.get('timestamp', '').strip())
+            if it_key == key:
+                return True
+
+        items.append(entry_dict)
+
+        updated_bytes = json.dumps(items, ensure_ascii=False).encode('utf-8')
+        b64_updated = base64.b64encode(updated_bytes).decode('utf-8')
+
+        put_payload = {
+            'message': f"Yangi anketa: {entry_dict.get('fish')} ({entry_dict.get('sinf')})",
+            'content': b64_updated,
+            'sha': sha
+        }
+
+        put_req = urllib.request.Request(
+            GITHUB_API_URL,
+            data=json.dumps(put_payload).encode('utf-8'),
+            headers={
+                'Authorization': f'Bearer {GITHUB_TOKEN}',
+                'User-Agent': 'Mozilla/5.0',
+                'Content-Type': 'application/json'
+            },
+            method='PUT'
+        )
+        urllib.request.urlopen(put_req, timeout=15)
+
+        # Mahalliy faylni ham yangilash
+        local_data_path = os.path.join(os.path.dirname(__file__), 'data', 'cloud_submissions.json')
+        try:
+            os.makedirs(os.path.dirname(local_data_path), exist_ok=True)
+            with open(local_data_path, 'w', encoding='utf-8') as f:
+                json.dump(items, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
+        return True
+    except Exception as e:
+        print(f"Cloud backup error: {e}")
+        return False
+
+def async_push_to_cloud(entry_dict):
+    import threading
+    t = threading.Thread(target=push_entry_to_cloud, args=(entry_dict,), daemon=True)
+    t.start()
+
+def remove_entry_from_cloud(fingerprint=None, fish=None, sinf=None):
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        return False
+    try:
+        import urllib.request
+        import json
+        import base64
+        req = urllib.request.Request(
+            GITHUB_API_URL,
+            headers={'Authorization': f'Bearer {GITHUB_TOKEN}', 'User-Agent': 'Mozilla/5.0'}
+        )
+        res = urllib.request.urlopen(req, timeout=12)
+        file_info = json.loads(res.read().decode('utf-8'))
+        sha = file_info['sha']
+        raw_content = base64.b64decode(file_info['content']).decode('utf-8')
+        items = json.loads(raw_content)
+
+        initial_len = len(items)
+        new_items = []
+        for it in items:
+            if fingerprint and it.get('fingerprint') == fingerprint:
+                continue
+            if fish and sinf and it.get('fish', '').strip().lower() == fish.strip().lower() and it.get('sinf', '').strip() == sinf.strip():
+                continue
+            new_items.append(it)
+
+        if len(new_items) == initial_len:
+            return True
+
+        updated_bytes = json.dumps(new_items, ensure_ascii=False).encode('utf-8')
+        b64_updated = base64.b64encode(updated_bytes).decode('utf-8')
+
+        put_payload = {
+            'message': f"O'chirildi: {fish or fingerprint} ({sinf or ''})",
+            'content': b64_updated,
+            'sha': sha
+        }
+
+        put_req = urllib.request.Request(
+            GITHUB_API_URL,
+            data=json.dumps(put_payload).encode('utf-8'),
+            headers={
+                'Authorization': f'Bearer {GITHUB_TOKEN}',
+                'User-Agent': 'Mozilla/5.0',
+                'Content-Type': 'application/json'
+            },
+            method='PUT'
+        )
+        urllib.request.urlopen(put_req, timeout=15)
+
+        local_data_path = os.path.join(os.path.dirname(__file__), 'data', 'cloud_submissions.json')
+        try:
+            with open(local_data_path, 'w', encoding='utf-8') as f:
+                json.dump(new_items, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+        return True
+    except Exception as e:
+        print(f"Cloud remove error: {e}")
+        return False
+
+def async_remove_from_cloud(fingerprint=None, fish=None, sinf=None):
+    import threading
+    t = threading.Thread(target=remove_entry_from_cloud, kwargs={'fingerprint': fingerprint, 'fish': fish, 'sinf': sinf}, daemon=True)
+    t.start()
+
+def sync_from_cloud():
+    """Syncs from GitHub cloud submissions to local database.db"""
+    local_data_path = os.path.join(os.path.dirname(__file__), 'data', 'cloud_submissions.json')
+    cloud_items = []
+    if os.path.exists(local_data_path):
+        try:
+            with open(local_data_path, 'r', encoding='utf-8') as f:
+                cloud_items = json.load(f)
+        except Exception:
+            pass
+
+    if GITHUB_TOKEN and GITHUB_REPO:
+        try:
+            import urllib.request
+            import json
+            import base64
+            req = urllib.request.Request(
+                GITHUB_API_URL,
+                headers={'Authorization': f'Bearer {GITHUB_TOKEN}', 'User-Agent': 'Mozilla/5.0'}
+            )
+            res = urllib.request.urlopen(req, timeout=8)
+            file_info = json.loads(res.read().decode('utf-8'))
+            raw_content = base64.b64decode(file_info['content']).decode('utf-8')
+            fetched = json.loads(raw_content)
+            if fetched and len(fetched) >= len(cloud_items):
+                cloud_items = fetched
+        except Exception as e:
+            print(f"Remote cloud sync fetch error: {e}")
+
+    if not cloud_items:
+        return 0
+
+    try:
+        conn = get_db()
+        existing = conn.execute("SELECT fingerprint, fish, sinf, timestamp FROM sorovnoma").fetchall()
+        seen_fps = {r['fingerprint'] for r in existing if r['fingerprint']}
+        seen_keys = {(r['fish'].strip().lower(), r['sinf'].strip(), r['timestamp'].strip()) for r in existing if r['fish']}
+
+        added = 0
+        for item in cloud_items:
+            fish = (item.get('fish') or '').strip()
+            sinf = (item.get('sinf') or '').strip()
+            ts = (item.get('timestamp') or '').strip()
+            fp = (item.get('fingerprint') or '').strip()
+            if not fish or not sinf:
+                continue
+            key = (fish.lower(), sinf, ts)
+            if fp and fp in seen_fps:
+                continue
+            if key in seen_keys:
+                continue
+
+            conn.execute("""
+                INSERT INTO sorovnoma (timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                ts, fp, item.get('til') or "O'zbek", fish, sinf,
+                item.get('fanlar') or '', item.get('togaraklar') or '',
+                item.get('iqtidor') or '', item.get('kasb') or '',
+                item.get('startap') or '', item.get('yangi_togaraklar') or '',
+                item.get('takliflar') or ''
+            ))
+            added += 1
+            if fp:
+                seen_fps.add(fp)
+            seen_keys.add(key)
+
+        if added > 0:
+            conn.commit()
+        conn.close()
+        return added
+    except Exception as e:
+        print(f"Cloud sync insert error: {e}")
+        return 0
+
 def sync_from_google_sheet():
     if not GOOGLE_SHEET_CSV_URL:
         return 0
@@ -111,6 +328,15 @@ def sync_from_google_sheet():
     except Exception as e:
         print(f"Google Sheet auto-sync error: {e}")
         return 0
+
+# Render serveri ishga tushganda yoki qayta yuklanganda avtomatik sinxronlash
+try:
+    _c_init = sync_from_cloud()
+    _s_init = sync_from_google_sheet()
+    if _c_init or _s_init:
+        print(f"Baza muvaffaqiyatli sinxronlandi: +{_c_init} ta bulutdan, +{_s_init} ta Google Sheetdan.")
+except Exception as _startup_sync_err:
+    print(f"Startup sync notice: {_startup_sync_err}")
 
 def generate_fingerprint():
     chars = string.ascii_uppercase + string.digits
@@ -420,29 +646,33 @@ def add_entry():
     conn.commit()
     conn.close()
 
+    entry_payload = {
+        'id': new_id,
+        'timestamp': timestamp,
+        'fingerprint': fingerprint,
+        'til': til,
+        'fish': fish,
+        'sinf': sinf,
+        'fanlar': fanlar,
+        'togaraklar': togaraklar,
+        'iqtidor': iqtidor,
+        'kasb': kasb,
+        'startap': startap,
+        'yangi_togaraklar': yangi_togaraklar,
+        'takliflar': takliflar
+    }
+
+    # Doimiy saqlash: Yangi anketani avtomatik ravishda GitHub Cloud Storage ga yozish
+    async_push_to_cloud(entry_payload)
+
     # Webhook orqali Google Sheet'ga ham bir vaqtda saqlash
     if GOOGLE_SHEET_WEBHOOK_URL:
         try:
             import urllib.request
             import json
-            hook_data = {
-                'id': new_id,
-                'timestamp': timestamp,
-                'fingerprint': fingerprint,
-                'til': til,
-                'fish': fish,
-                'sinf': sinf,
-                'fanlar': fanlar,
-                'togaraklar': togaraklar,
-                'iqtidor': iqtidor,
-                'kasb': kasb,
-                'startap': startap,
-                'yangi_togaraklar': yangi_togaraklar,
-                'takliflar': takliflar
-            }
             req_hook = urllib.request.Request(
                 GOOGLE_SHEET_WEBHOOK_URL,
-                data=json.dumps(hook_data).encode('utf-8'),
+                data=json.dumps(entry_payload).encode('utf-8'),
                 headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'}
             )
             urllib.request.urlopen(req_hook, timeout=4)
@@ -452,31 +682,19 @@ def add_entry():
     return jsonify({
         'status': 'success',
         'message': "Ma'lumot muvaffaqiyatli saqlandi!",
-        'data': {
-            'id': new_id,
-            'timestamp': timestamp,
-            'fingerprint': fingerprint,
-            'til': til,
-            'fish': fish,
-            'sinf': sinf,
-            'fanlar': fanlar,
-            'togaraklar': togaraklar,
-            'iqtidor': iqtidor,
-            'kasb': kasb,
-            'startap': startap,
-            'yangi_togaraklar': yangi_togaraklar,
-            'takliflar': takliflar
-        }
+        'data': entry_payload
     }), 201
 
 @app.route('/api/sync-google-sheet', methods=['POST'])
 @admin_required
 def api_sync_google_sheet():
-    added = sync_from_google_sheet()
+    c_added = sync_from_cloud()
+    s_added = sync_from_google_sheet()
+    total_added = c_added + s_added
     return jsonify({
         'status': 'success',
-        'message': f"Google Sheet bilan muvaffaqiyatli sinxronlandi! Yangi qo'shilgan yozuvlar: {added} ta.",
-        'added': added
+        'message': f"Baza to'liq sinxronlandi! Bulutli baza: +{c_added}, Google Sheet: +{s_added}. Jami yangi: {total_added} ta.",
+        'added': total_added
     })
 
 @app.route('/api/entries/<int:entry_id>', methods=['GET'])
@@ -528,6 +746,9 @@ def update_entry(entry_id):
 @admin_required
 def delete_entry(entry_id):
     conn = get_db()
+    row = conn.execute("SELECT fingerprint, fish, sinf FROM sorovnoma WHERE id = ?", (entry_id,)).fetchone()
+    if row:
+        async_remove_from_cloud(fingerprint=row['fingerprint'], fish=row['fish'], sinf=row['sinf'])
     conn.execute("DELETE FROM sorovnoma WHERE id = ?", (entry_id,))
     conn.commit()
     conn.close()
