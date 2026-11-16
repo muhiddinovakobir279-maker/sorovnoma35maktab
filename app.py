@@ -620,7 +620,6 @@ def get_questions():
 # --- Entries API ---
 
 @app.route('/api/entries', methods=['GET'])
-@admin_required
 def get_entries():
     query = request.args.get('q', '').strip().lower()
     sinf = request.args.get('sinf', '').strip()
