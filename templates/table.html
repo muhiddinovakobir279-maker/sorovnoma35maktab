@@ -42,7 +42,7 @@
                 </div>
                 <div>
                     <div class="flex flex-wrap items-center gap-2">
-                        <h1 class="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">35-Maktab So'rovnoma Natijalari</h1>
+                        <h1 class="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">35-Maktab Diagnostika & So'rovnoma Natijalari</h1>
                         <span id="badgeCount" class="px-3 py-0.5 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
                             0 ta yozuv
                         </span>
@@ -50,7 +50,7 @@
                             ⚡ Jonli Baza
                         </span>
                     </div>
-                    <p class="text-xs text-gray-500 mt-0.5">O'quvchilar qiziqishi, kasbiy yo'nalishi va to'garaklar bo'yicha yagona ma'lumotlar bazasi</p>
+                    <p class="text-xs text-gray-500 mt-0.5">5-11-sinf o'quvchilari qobiliyatlari, qiziqishlar xaritasi va kasbiy diagnostika ma'lumotlari</p>
                 </div>
             </div>
 
@@ -98,14 +98,9 @@
                 </a>
 
                 <!-- Print button -->
-                <button onclick="window.print()" class="px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-medium text-xs sm:text-sm rounded-xl flex items-center space-x-1.5 shadow-sm transition-all" title="A4 formatida rasmiy hisobot chop etish">
+                <button onclick="window.print()" class="px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs sm:text-sm rounded-xl flex items-center space-x-1.5 shadow-sm transition-all" title="A4 formatida rasmiy hisobot chop etish">
                     <i data-lucide="printer" class="w-4 h-4 text-slate-600"></i>
                     <span class="hidden sm:inline">Chop etish (A4)</span>
-                </button>
-
-                <button onclick="syncGoogleSheet()" id="btnSyncSheet" class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-semibold text-xs sm:text-sm rounded-xl shadow-sm flex items-center space-x-1.5 transition-all" title="Bulutli baza va Google Sheet bilan jonli sinxronlash">
-                    <i data-lucide="refresh-cw" class="w-4 h-4 text-emerald-600"></i>
-                    <span class="hidden lg:inline">Baza va Sheet sinxronlash</span>
                 </button>
 
                 <button onclick="loadEntries()" class="p-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 rounded-xl shadow-sm transition-all" title="Qayta yangilash">
@@ -117,7 +112,6 @@
                     <span class="hidden sm:inline">Tozalash</span>
                 </button>
             </div>
-
         </div>
 
         <!-- TALENT MATRIX TABS -->
@@ -136,22 +130,22 @@
                 ⚽ Sport & Harbiy
             </button>
             <button onclick="setTalentFilter('biznes')" id="tabTalentBiz" class="px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-all whitespace-nowrap">
-                💼 Biznes & Boshqaruv
+                💼 Biznes & Tashkilot
             </button>
             <button onclick="setTalentFilter('sanat')" id="tabTalentArt" class="px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-all whitespace-nowrap">
                 🎨 San'at & Ijod
             </button>
-            <button onclick="setTalentFilter('togaraksiz')" id="tabTalentNoClub" class="px-3 py-1.5 rounded-xl font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 transition-all whitespace-nowrap border border-rose-200" title="Hech qanday to'garakka qatnashmaydigan o'quvchilar ro'yxati">
-                🚩 To'garaksizlar (Risk)
+            <button onclick="setTalentFilter('aniq')" id="tabTalentMath" class="px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-all whitespace-nowrap">
+                🧮 Aniq fanlar (Matematika/Fizika)
             </button>
         </div>
 
         <!-- Filter & Search Controls -->
-        <div class="mt-3 pt-3 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+        <div class="mt-3 pt-3 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 lg:grid-cols-6 gap-2.5">
             <!-- Search -->
             <div class="relative sm:col-span-2">
                 <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-3"></i>
-                <input id="searchInput" oninput="debounceSearch()" type="text" placeholder="F.I.Sh., Fingerprint yoki taklif bo'yicha qidirish..." class="w-full pl-9 pr-8 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+                <input id="searchInput" oninput="debounceSearch()" type="text" placeholder="F.I.Sh., natija yoki taklif bo'yicha qidirish..." class="w-full pl-9 pr-8 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
                 <button onclick="clearSearch()" id="clearSearchBtn" class="hidden absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
@@ -192,6 +186,17 @@
                 </select>
             </div>
 
+            <!-- Test Type Filter -->
+            <div>
+                <select id="filterTestTuri" onchange="loadEntries()" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-medium">
+                    <option value="">Barcha test turlari</option>
+                    <option value="5-6-sinf">5–6-sinf so'rovnomasi</option>
+                    <option value="7-8-sinf">7–8-sinf diagnostikasi</option>
+                    <option value="9-11-sinf">9–11-sinf «Qiziqishlar xaritasi»</option>
+                    <option value="tashkilot">Tashkilotchilik testi</option>
+                </select>
+            </div>
+
             <!-- Language Filter -->
             <div>
                 <select id="filterTil" onchange="loadEntries()" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
@@ -203,7 +208,7 @@
 
             <!-- Profession Filter -->
             <div>
-                <input id="filterKasb" oninput="debounceSearch()" type="text" placeholder="Kasb bo'yicha (masalan: IT)" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                <input id="filterKasb" oninput="debounceSearch()" type="text" placeholder="Kasb/tashxis bo'yicha..." class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
             </div>
         </div>
     </div>
@@ -215,18 +220,18 @@
                 <thead>
                     <tr class="border-b border-gray-300">
                         <th class="w-12 px-2 py-3 text-center text-gray-500 font-mono text-[11px] bg-gray-100">#</th>
-                        <th class="px-3 py-3 col-header min-w-[150px]">Sana va vaqt</th>
-                        <th class="px-3 py-3 col-header min-w-[110px]">Fingerprint</th>
-                        <th class="px-3 py-3 col-header min-w-[90px]">Til</th>
+                        <th class="px-3 py-3 col-header min-w-[140px]">Sana va vaqt</th>
+                        <th class="px-3 py-3 col-header min-w-[100px]">Fingerprint</th>
+                        <th class="px-3 py-3 col-header min-w-[85px]">Til</th>
                         <th class="px-3 py-3 col-header min-w-[200px]">F.I.Sh.</th>
-                        <th class="px-3 py-3 col-header min-w-[90px]">Sinf</th>
-                        <th class="px-3 py-3 col-header min-w-[220px]">Qiziqadigan fanlar</th>
-                        <th class="px-3 py-3 col-header min-w-[220px]">Togaraklar</th>
-                        <th class="px-3 py-3 col-header min-w-[220px]">Iqtidor sohasi</th>
-                        <th class="px-3 py-3 col-header min-w-[180px]">Kelajak kasbi</th>
-                        <th class="px-3 py-3 col-header min-w-[220px]">Startap loyihasi</th>
-                        <th class="px-3 py-3 col-header min-w-[240px]">Yangi togaraklar taklifi</th>
-                        <th class="px-3 py-3 col-header min-w-[220px]">Qoshimcha takliflar</th>
+                        <th class="px-3 py-3 col-header min-w-[80px]">Sinf</th>
+                        <th class="px-3 py-3 col-header min-w-[130px]">Test turi</th>
+                        <th class="px-3 py-3 col-header min-w-[220px]">Asosiy natija / Tashxis</th>
+                        <th class="px-3 py-3 col-header min-w-[240px]">Psixologik tavsiya</th>
+                        <th class="px-3 py-3 col-header min-w-[170px]">Kelajak kasbi</th>
+                        <th class="px-3 py-3 col-header min-w-[200px]">Fanlar / Qiziqishlar</th>
+                        <th class="px-3 py-3 col-header min-w-[180px]">To'garaklar</th>
+                        <th class="px-3 py-3 col-header min-w-[180px]">Takliflar</th>
                         <th class="px-3 py-3 col-header min-w-[120px] text-center sticky right-0 bg-gray-100 shadow-sm">Amallar</th>
                     </tr>
                 </thead>
@@ -241,19 +246,15 @@
             <div class="w-20 h-20 bg-emerald-50 rounded-3xl flex items-center justify-center text-emerald-600 mb-4 border border-emerald-100 shadow-inner">
                 <i data-lucide="file-plus-2" class="w-10 h-10"></i>
             </div>
-            <h2 class="text-xl font-bold text-gray-800 mb-2">Hech qanday natija topilmadi</h2>
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Hozircha yangi natijalar mavjud emas</h2>
             <p class="text-gray-500 max-w-md text-sm mb-6">
-                Tanlangan filtrlar bo'yicha hech qanday o'quvchi ma'lumoti topilmadi. Qidiruv so'zini yoki sinf filtrini o'zgartirib ko'ring.
+                Yangi test anketalari o'quvchilar tomonidan to'ldirilganda shu yerda jonli ko'rinadi.
             </p>
             <div class="flex flex-wrap items-center justify-center gap-3">
-                <button onclick="openAddModal()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-md shadow-emerald-200 flex items-center space-x-2 transition-all">
-                    <i data-lucide="plus" class="w-4 h-4"></i>
-                    <span>Qo'lda yangi ma'lumot kiritish</span>
-                </button>
-                <button onclick="openQrModal()" class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-sm rounded-xl border border-gray-300 flex items-center space-x-2 transition-all">
-                    <i data-lucide="qr-code" class="w-4 h-4 text-emerald-600"></i>
-                    <span>So'rovnoma havolasi & QR-kod</span>
-                </button>
+                <a href="/" target="_blank" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-md shadow-emerald-200 flex items-center space-x-2 transition-all">
+                    <i data-lucide="external-link" class="w-4 h-4"></i>
+                    <span>So'rovnoma formasini ochish</span>
+                </a>
             </div>
         </div>
 
@@ -264,7 +265,7 @@
             </div>
             <div class="flex items-center space-x-2">
                 <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>Google Sheets formatidagi 12 ta ustun • 35-maktab</span>
+                <span>35-sonli maktab • Psixologik & Kasbiy diagnostika tizimi</span>
             </div>
         </div>
     </div>
@@ -273,8 +274,6 @@
 <!-- ADD / EDIT RECORD MODAL -->
 <div id="entryModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-3 overflow-y-auto">
     <div class="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative my-8 max-h-[90vh] flex flex-col border border-gray-100">
-        
-        <!-- Header -->
         <div class="flex justify-between items-center pb-4 border-b border-gray-100">
             <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
@@ -290,18 +289,14 @@
             </button>
         </div>
 
-        <!-- Form Body -->
         <form id="entryForm" onsubmit="saveEntry(event)" class="space-y-4 pt-4 flex-1 overflow-y-auto pr-1">
             <input type="hidden" id="entryId">
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <!-- F.I.Sh -->
                 <div class="md:col-span-2">
-                    <label class="block text-xs font-bold text-gray-700 mb-1">F.I.Sh. (Familiya Ism Sharif) <span class="text-red-500">*</span></label>
-                    <input id="inputFish" type="text" required placeholder="Masalan: Kamalova Zarina Nasirovna" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">F.I.Sh. <span class="text-red-500">*</span></label>
+                    <input id="inputFish" type="text" required class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
                 </div>
-
-                <!-- Til -->
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1">Til</label>
                     <select id="inputTil" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none font-medium">
@@ -311,113 +306,58 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <!-- Sinf -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1">Sinf <span class="text-red-500">*</span></label>
-                    <select id="inputSinf" required class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none font-medium">
-                        <option value="">Tanlang...</option>
-                        <optgroup label="5-sinflar">
-                            <option value="5-A">5-A</option><option value="5-B">5-B</option><option value="5-V">5-V</option><option value="5-G">5-G</option><option value="5-D">5-D</option><option value="5-O">5-O</option><option value="5-Ye">5-Ye</option><option value="5-I">5-I</option><option value="5-Z">5-Z</option>
-                        </optgroup>
-                        <optgroup label="6-sinflar">
-                            <option value="6-A">6-A</option><option value="6-B">6-B</option><option value="6-V">6-V</option><option value="6-G">6-G</option><option value="6-D">6-D</option><option value="6-Ye">6-Ye</option>
-                        </optgroup>
-                        <optgroup label="7-sinflar">
-                            <option value="7-A">7-A</option><option value="7-B">7-B</option><option value="7-V">7-V</option><option value="7-G">7-G</option><option value="7-D">7-D</option><option value="7-Ye">7-Ye</option><option value="7-O">7-O</option>
-                        </optgroup>
-                        <optgroup label="8-sinflar">
-                            <option value="8-A">8-A</option><option value="8-B">8-B</option><option value="8-V">8-V</option><option value="8-G">8-G</option><option value="8-D">8-D</option><option value="8-I">8-I</option><option value="8-Yo">8-Yo</option><option value="8-J">8-J</option><option value="8-Ye">8-Ye</option>
-                        </optgroup>
-                        <optgroup label="9-sinflar">
-                            <option value="9-A">9-A</option><option value="9-B">9-B</option><option value="9-V">9-V</option><option value="9-G">9-G</option><option value="9-D">9-D</option><option value="9-O">9-O</option><option value="9-Y">9-Y</option><option value="9-Ye">9-Ye</option><option value="9-I">9-I</option>
-                        </optgroup>
-                        <optgroup label="10-sinflar">
-                            <option value="10-A">10-A</option><option value="10-B">10-B</option><option value="10-V">10-V</option><option value="10-G">10-G</option><option value="10-D">10-D</option><option value="10-Yo">10-Yo</option>
-                        </optgroup>
-                        <optgroup label="11-sinflar">
-                            <option value="11-A">11-A</option><option value="11-B">11-B</option><option value="11-V">11-V</option><option value="11-G">11-G</option><option value="11-D">11-D</option><option value="11-I">11-I</option>
-                        </optgroup>
+                    <input id="inputSinf" type="text" required placeholder="Masalan: 7-A" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Test turi</label>
+                    <select id="inputTestTuri" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none font-medium">
+                        <option value="5-6-sinf">5-6-sinf</option>
+                        <option value="7-8-sinf">7-8-sinf</option>
+                        <option value="9-11-sinf">9-11-sinf</option>
+                        <option value="tashkilot">Tashkilot</option>
                     </select>
                 </div>
-
-                <!-- Kelajak kasbi -->
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1">Kelajak kasbi</label>
-                    <input id="inputKasb" type="text" placeholder="Masalan: Dasturchi / Shifokor / Huquqshunos" list="kasblarList" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-                    <datalist id="kasblarList">
-                        <option value="Dasturchi / IT mutaxassisi">
-                        <option value="Shifokor (Врач)">
-                        <option value="Huquqshunos / Advokat">
-                        <option value="O'qituvchi / Professor">
-                        <option value="Tadbirkor / Ishbilarmon">
-                        <option value="Me'mor / Dizayner">
-                        <option value="Sportchi">
-                        <option value="Harbiy xizmatchi">
-                        <option value="Bankir / Moliyachi">
-                        <option value="Jurnalist / Bloger">
-                        <option value="Uchuvchi (Pilot)">
-                    </datalist>
+                    <input id="inputKasb" type="text" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
                 </div>
             </div>
 
-            <!-- Qiziqadigan fanlar -->
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-1">Qiziqadigan fanlar (Vergul bilan ajratilgan)</label>
-                <input id="inputFanlar" type="text" placeholder="Ingliz tili, Matematika, Informatika (IT), Fizika..." class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-                <div class="flex flex-wrap gap-1.5 mt-1.5">
-                    <span onclick="appendTag('inputFanlar', 'Matematika')" class="cursor-pointer text-[11px] font-semibold px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg border border-gray-200">+ Matematika</span>
-                    <span onclick="appendTag('inputFanlar', 'Ingliz tili')" class="cursor-pointer text-[11px] font-semibold px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg border border-gray-200">+ Ingliz tili</span>
-                    <span onclick="appendTag('inputFanlar', 'Informatika (IT)')" class="cursor-pointer text-[11px] font-semibold px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg border border-gray-200">+ IT</span>
-                    <span onclick="appendTag('inputFanlar', 'Biologiya')" class="cursor-pointer text-[11px] font-semibold px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg border border-gray-200">+ Biologiya</span>
-                    <span onclick="appendTag('inputFanlar', 'Kimyo')" class="cursor-pointer text-[11px] font-semibold px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg border border-gray-200">+ Kimyo</span>
-                    <span onclick="appendTag('inputFanlar', 'Fizika')" class="cursor-pointer text-[11px] font-semibold px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg border border-gray-200">+ Fizika</span>
-                    <span onclick="appendTag('inputFanlar', 'Jismoniy tarbiya')" class="cursor-pointer text-[11px] font-semibold px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg border border-gray-200">+ Sport</span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Asosiy natija / Tashxis</label>
+                    <input id="inputAsosiyNatija" type="text" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Psixologik tavsiya</label>
+                    <input id="inputTavsiya" type="text" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
                 </div>
             </div>
 
-            <!-- Togaraklar -->
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-1">Hozirda qatnashayotgan to'garaklar</label>
-                <input id="inputTogaraklar" type="text" placeholder="Chet tili kurslari, Sport sektsiyasi..." class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-                <div class="flex flex-wrap gap-1.5 mt-1.5">
-                    <span onclick="appendTag('inputTogaraklar', 'Chet tili kurslari')" class="cursor-pointer text-[11px] font-semibold px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg border border-gray-200">+ Chet tili kurslari</span>
-                    <span onclick="appendTag('inputTogaraklar', 'Sport sektsiyasi')" class="cursor-pointer text-[11px] font-semibold px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg border border-gray-200">+ Sport sektsiyasi</span>
-                    <span onclick="appendTag('inputTogaraklar', 'Dasturlash (IT) to'garagi')" class="cursor-pointer text-[11px] font-semibold px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg border border-gray-200">+ IT to'garak</span>
-                    <span onclick="appendTag('inputTogaraklar', 'Hech qaysi to'garakka qatnashmayman')" class="cursor-pointer text-[11px] font-semibold px-2 py-0.5 bg-gray-100 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg border border-gray-200">+ Qatnashmayman</span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Qiziqadigan fanlar</label>
+                    <input id="inputFanlar" type="text" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">To'garaklar</label>
+                    <input id="inputTogaraklar" type="text" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
                 </div>
             </div>
 
-            <!-- Iqtidor sohasi -->
             <div>
-                <label class="block text-xs font-bold text-gray-700 mb-1">Iqtidor sohasi</label>
-                <input id="inputIqtidor" type="text" placeholder="Chet tillarini o'rganish, IT va dasturlash, Sport..." class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                <label class="block text-xs font-bold text-gray-700 mb-1">Taklif va fikrlar</label>
+                <textarea id="inputTakliflar" rows="2" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
             </div>
 
-            <!-- Startap loyihasi -->
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-1">Startap loyihasi</label>
-                <input id="inputStartap" type="text" placeholder="Yo'q / Ha, mavjud: (tavsifi) / Rejalashtiryapman" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-            </div>
-
-            <!-- Yangi to'garaklar taklifi -->
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-1">Yangi to'garaklar taklifi</label>
-                <input id="inputYangiTogaraklar" type="text" placeholder="Robototexnika va elektronika, Video montaj va grafik dizayn..." class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-            </div>
-
-            <!-- Qo'shimcha takliflar -->
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-1">Qo'shimcha taklif va istaklar</label>
-                <textarea id="inputTakliflar" rows="2" placeholder="O'quvchining erkin fikr va takliflari..." class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
-            </div>
-
-            <!-- Buttons -->
             <div class="pt-4 border-t border-gray-200 flex justify-end space-x-2">
-                <button type="button" onclick="closeEntryModal()" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl transition-colors">
+                <button type="button" onclick="closeEntryModal()" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl">
                     Bekor qilish
                 </button>
-                <button type="submit" id="saveBtn" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-emerald-200 transition-colors flex items-center space-x-1.5">
+                <button type="submit" id="saveBtn" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md flex items-center space-x-1.5">
                     <i data-lucide="check" class="w-4 h-4"></i>
                     <span>Saqlash</span>
                 </button>
@@ -432,6 +372,7 @@
         <div class="flex justify-between items-center pb-4 border-b border-gray-100 mb-4">
             <div>
                 <span id="viewFingerprint" class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-mono text-xs font-extrabold">FP000000</span>
+                <span id="viewTestTuriBadge" class="ml-2 px-2.5 py-1 bg-teal-100 text-teal-800 rounded-lg text-xs font-bold">Test</span>
                 <h3 id="viewFish" class="text-xl font-black text-gray-900 mt-1">F.I.Sh.</h3>
             </div>
             <button onclick="closeViewModal()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-xl hover:bg-gray-100">
@@ -439,7 +380,7 @@
             </button>
         </div>
 
-        <div class="space-y-3.5 text-sm text-gray-700">
+        <div class="space-y-4 text-sm text-gray-700">
             <div class="grid grid-cols-2 gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-200">
                 <div><span class="text-gray-400 text-xs block">Sinf:</span> <strong id="viewSinf" class="text-emerald-700 text-sm"></strong></div>
                 <div><span class="text-gray-400 text-xs block">Til:</span> <strong id="viewTil" class="text-sm"></strong></div>
@@ -447,33 +388,36 @@
                 <div><span class="text-gray-400 text-xs block">Kelajak kasbi:</span> <strong id="viewKasb" class="text-blue-700 text-sm"></strong></div>
             </div>
 
+            <!-- Asosiy Tashxis -->
+            <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 space-y-1">
+                <span class="text-xs font-extrabold text-emerald-800 uppercase tracking-wider block">Asosiy Tashxis / Qobiliyat:</span>
+                <p id="viewAsosiyNatija" class="text-base font-black text-emerald-950"></p>
+            </div>
+
+            <!-- Tavsiya -->
+            <div class="p-4 bg-teal-50 rounded-2xl border border-teal-200 space-y-1">
+                <span class="text-xs font-extrabold text-teal-800 uppercase tracking-wider block">Psixologik tavsiya:</span>
+                <p id="viewTavsiya" class="text-xs sm:text-sm text-teal-950 leading-relaxed"></p>
+            </div>
+
+            <!-- Visual Score Bars (if available) -->
+            <div id="viewScoreBarsContainer" class="space-y-2 pt-2 border-t border-gray-100 hidden">
+                <span class="text-xs font-bold text-gray-600 uppercase tracking-wider block">Shkalalar / Sohalar ballari:</span>
+                <div id="viewScoreBars" class="space-y-2"></div>
+            </div>
+
             <div>
-                <span class="font-bold text-xs text-gray-600 block mb-1">Qiziqadigan fanlar:</span>
+                <span class="font-bold text-xs text-gray-600 block mb-1">Fanlar / Qiziqishlar:</span>
                 <p id="viewFanlar" class="bg-gray-50 p-3 rounded-xl border border-gray-200 text-gray-800 text-xs sm:text-sm"></p>
             </div>
 
             <div>
-                <span class="font-bold text-xs text-gray-600 block mb-1">Qatnashayotgan to'garaklar:</span>
+                <span class="font-bold text-xs text-gray-600 block mb-1">To'garaklar:</span>
                 <p id="viewTogaraklar" class="bg-gray-50 p-3 rounded-xl border border-gray-200 text-gray-800 text-xs sm:text-sm"></p>
             </div>
 
             <div>
-                <span class="font-bold text-xs text-gray-600 block mb-1">Iqtidor sohasi:</span>
-                <p id="viewIqtidor" class="bg-gray-50 p-3 rounded-xl border border-gray-200 text-gray-800 text-xs sm:text-sm"></p>
-            </div>
-
-            <div>
-                <span class="font-bold text-xs text-gray-600 block mb-1">Startap loyihasi:</span>
-                <p id="viewStartap" class="bg-gray-50 p-3 rounded-xl border border-gray-200 text-gray-800 text-xs sm:text-sm italic"></p>
-            </div>
-
-            <div>
-                <span class="font-bold text-xs text-gray-600 block mb-1">Yangi to'garaklar taklifi:</span>
-                <p id="viewYangiTogaraklar" class="bg-gray-50 p-3 rounded-xl border border-gray-200 text-emerald-800 font-semibold text-xs sm:text-sm"></p>
-            </div>
-
-            <div>
-                <span class="font-bold text-xs text-gray-600 block mb-1">Qo'shimcha takliflar:</span>
+                <span class="font-bold text-xs text-gray-600 block mb-1">Takliflar:</span>
                 <p id="viewTakliflar" class="bg-gray-50 p-3 rounded-xl border border-gray-200 text-gray-800 whitespace-pre-line text-xs sm:text-sm"></p>
             </div>
         </div>
@@ -493,5 +437,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/main.js?v=20260919_0855"></script>
+<script src="/static/js/main.js?v=20261116_1000"></script>
 {% endblock %}

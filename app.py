@@ -6,6 +6,7 @@ import string
 import io
 import csv
 import re
+import json
 import base64
 from datetime import datetime, timedelta
 from functools import wraps
@@ -13,6 +14,7 @@ from flask import Flask, render_template, request, jsonify, send_file, redirect,
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 import qrcode
+import survey_questions as sq
 
 # Ensure UTF-8 output on Windows consoles
 try:
@@ -47,23 +49,40 @@ def init_db():
                 til TEXT DEFAULT "O'zbek",
                 fish TEXT NOT NULL,
                 sinf TEXT NOT NULL,
-                fanlar TEXT DEFAULT "",
-                togaraklar TEXT DEFAULT "",
-                iqtidor TEXT DEFAULT "",
-                kasb TEXT DEFAULT "",
-                startap TEXT DEFAULT "",
-                yangi_togaraklar TEXT DEFAULT "",
-                takliflar TEXT DEFAULT ""
+                test_turi TEXT NOT NULL DEFAULT '',
+                asosiy_natija TEXT DEFAULT '',
+                ballar_json TEXT DEFAULT '{}',
+                javoblar_json TEXT DEFAULT '{}',
+                tavsiya TEXT DEFAULT '',
+                qoshimcha TEXT DEFAULT '',
+                fanlar TEXT DEFAULT '',
+                togaraklar TEXT DEFAULT '',
+                iqtidor TEXT DEFAULT '',
+                kasb TEXT DEFAULT '',
+                startap TEXT DEFAULT '',
+                yangi_togaraklar TEXT DEFAULT '',
+                takliflar TEXT DEFAULT ''
             )
         ''')
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(sorovnoma)")
+        existing_cols = {row['name'] for row in cursor.fetchall()}
+        new_cols = {
+            'test_turi': "TEXT NOT NULL DEFAULT ''",
+            'asosiy_natija': "TEXT DEFAULT ''",
+            'ballar_json': "TEXT DEFAULT '{}'",
+            'javoblar_json': "TEXT DEFAULT '{}'",
+            'tavsiya': "TEXT DEFAULT ''",
+            'qoshimcha': "TEXT DEFAULT ''"
+        }
+        for col_name, col_type in new_cols.items():
+            if col_name not in existing_cols:
+                conn.execute(f"ALTER TABLE sorovnoma ADD COLUMN {col_name} {col_type}")
     conn.close()
 
 init_db()
 
-GOOGLE_SHEET_CSV_URL = os.environ.get(
-    'GOOGLE_SHEET_CSV_URL', 
-    'https://docs.google.com/spreadsheets/d/1s3sTJj9TG6-2SXb5dj38d3yh0LQDejpNkNMCqf3lX6U/export?format=csv&gid=1889058394'
-)
+GOOGLE_SHEET_CSV_URL = os.environ.get('GOOGLE_SHEET_CSV_URL', '')
 GOOGLE_SHEET_WEBHOOK_URL = os.environ.get('GOOGLE_SHEET_WEBHOOK_URL', '')
 
 _GT_CIPHER = [77, 66, 69, 117, 127, 105, 67, 97, 107, 122, 95, 26, 78, 115, 89, 18, 68, 98, 115, 104, 97, 104, 104, 79, 94, 109, 124, 83, 89, 112, 83, 80, 96, 25, 24, 78, 122, 123, 111, 125]
@@ -77,8 +96,6 @@ def push_entry_to_cloud(entry_dict):
         return False
     try:
         import urllib.request
-        import json
-        import base64
         req = urllib.request.Request(
             GITHUB_API_URL,
             headers={'Authorization': f'Bearer {GITHUB_TOKEN}', 'User-Agent': 'Mozilla/5.0'}
@@ -91,11 +108,11 @@ def push_entry_to_cloud(entry_dict):
 
         # Check if already exists in cloud items
         fp = entry_dict.get('fingerprint')
-        key = (entry_dict.get('fish', '').lower().strip(), entry_dict.get('sinf', '').strip(), entry_dict.get('timestamp', '').strip())
+        key = (entry_dict.get('fish', '').lower().strip(), entry_dict.get('sinf', '').strip(), entry_dict.get('test_turi', '').strip())
         for it in items:
             if fp and it.get('fingerprint') == fp:
                 return True
-            it_key = (it.get('fish', '').lower().strip(), it.get('sinf', '').strip(), it.get('timestamp', '').strip())
+            it_key = (it.get('fish', '').lower().strip(), it.get('sinf', '').strip(), it.get('test_turi', '').strip())
             if it_key == key:
                 return True
 
@@ -105,7 +122,7 @@ def push_entry_to_cloud(entry_dict):
         b64_updated = base64.b64encode(updated_bytes).decode('utf-8')
 
         put_payload = {
-            'message': f"Yangi anketa: {entry_dict.get('fish')} ({entry_dict.get('sinf')})",
+            'message': f"Yangi anketa: {entry_dict.get('fish')} ({entry_dict.get('sinf')}) - {entry_dict.get('test_turi')}",
             'content': b64_updated,
             'sha': sha
         }
@@ -146,8 +163,6 @@ def remove_entry_from_cloud(fingerprint=None, fish=None, sinf=None):
         return False
     try:
         import urllib.request
-        import json
-        import base64
         req = urllib.request.Request(
             GITHUB_API_URL,
             headers={'Authorization': f'Bearer {GITHUB_TOKEN}', 'User-Agent': 'Mozilla/5.0'}
@@ -208,7 +223,7 @@ def async_remove_from_cloud(fingerprint=None, fish=None, sinf=None):
     t.start()
 
 def sync_from_cloud():
-    """Syncs from GitHub cloud submissions to local database.db"""
+    """Syncs from local/remote GitHub cloud submissions to local database.db"""
     local_data_path = os.path.join(os.path.dirname(__file__), 'data', 'cloud_submissions.json')
     cloud_items = []
     if os.path.exists(local_data_path):
@@ -218,32 +233,14 @@ def sync_from_cloud():
         except Exception:
             pass
 
-    if GITHUB_TOKEN and GITHUB_REPO:
-        try:
-            import urllib.request
-            import json
-            import base64
-            req = urllib.request.Request(
-                GITHUB_API_URL,
-                headers={'Authorization': f'Bearer {GITHUB_TOKEN}', 'User-Agent': 'Mozilla/5.0'}
-            )
-            res = urllib.request.urlopen(req, timeout=8)
-            file_info = json.loads(res.read().decode('utf-8'))
-            raw_content = base64.b64decode(file_info['content']).decode('utf-8')
-            fetched = json.loads(raw_content)
-            if fetched and len(fetched) >= len(cloud_items):
-                cloud_items = fetched
-        except Exception as e:
-            print(f"Remote cloud sync fetch error: {e}")
-
     if not cloud_items:
         return 0
 
     try:
         conn = get_db()
-        existing = conn.execute("SELECT fingerprint, fish, sinf, timestamp FROM sorovnoma").fetchall()
+        existing = conn.execute("SELECT fingerprint, fish, sinf, timestamp, test_turi FROM sorovnoma").fetchall()
         seen_fps = {r['fingerprint'] for r in existing if r['fingerprint']}
-        seen_keys = {(r['fish'].strip().lower(), r['sinf'].strip(), r['timestamp'].strip()) for r in existing if r['fish']}
+        seen_keys = {(r['fish'].strip().lower(), r['sinf'].strip(), (r['test_turi'] or '').strip()) for r in existing if r['fish']}
 
         added = 0
         for item in cloud_items:
@@ -251,19 +248,27 @@ def sync_from_cloud():
             sinf = (item.get('sinf') or '').strip()
             ts = (item.get('timestamp') or '').strip()
             fp = (item.get('fingerprint') or '').strip()
+            tt = (item.get('test_turi') or '').strip()
             if not fish or not sinf:
                 continue
-            key = (fish.lower(), sinf, ts)
+            key = (fish.lower(), sinf, tt)
             if fp and fp in seen_fps:
                 continue
             if key in seen_keys:
                 continue
 
             conn.execute("""
-                INSERT INTO sorovnoma (timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO sorovnoma (
+                    timestamp, fingerprint, til, fish, sinf, test_turi,
+                    asosiy_natija, ballar_json, javoblar_json, tavsiya, qoshimcha,
+                    fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 ts, fp, item.get('til') or "O'zbek", fish, sinf,
+                tt, item.get('asosiy_natija') or '',
+                item.get('ballar_json') or '{}', item.get('javoblar_json') or '{}',
+                item.get('tavsiya') or '', item.get('qoshimcha') or '',
                 item.get('fanlar') or '', item.get('togaraklar') or '',
                 item.get('iqtidor') or '', item.get('kasb') or '',
                 item.get('startap') or '', item.get('yangi_togaraklar') or '',
@@ -298,24 +303,38 @@ def sync_from_google_sheet():
         seen_keys = {(r['fish'].strip().lower(), r['sinf'].strip(), r['timestamp'].strip()) for r in existing if r['fish']}
 
         added = 0
-        for r in sheet_rows:
-            if not r or len(r) < 5:
+        for row in sheet_rows:
+            if not row or len(row) < 5:
                 continue
-            while len(r) < 12:
-                r.append('')
-            ts, fp, til, fish, sinf, fan, tog, iqt, kasb, startap, yt, taklif = [x.strip() for x in r[:12]]
-            if not fish:
+            ts = (row[0] or '').strip()
+            fp = (row[1] or '').strip()
+            til = (row[2] or "O'zbek").strip()
+            fish = (row[3] or '').strip()
+            sinf = (row[4] or '').strip()
+            if not fish or not sinf:
                 continue
+
             key = (fish.lower(), sinf, ts)
             if fp and fp in seen_fps:
                 continue
             if key in seen_keys:
                 continue
 
+            fanlar = row[5].strip() if len(row) > 5 else ''
+            togaraklar = row[6].strip() if len(row) > 6 else ''
+            iqtidor = row[7].strip() if len(row) > 7 else ''
+            kasb = row[8].strip() if len(row) > 8 else ''
+            startap = row[9].strip() if len(row) > 9 else ''
+            yangi_tog = row[10].strip() if len(row) > 10 else ''
+            takliflar = row[11].strip() if len(row) > 11 else ''
+
+            if not fp:
+                fp = generate_fingerprint()
+
             conn.execute("""
                 INSERT INTO sorovnoma (timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (ts, fp, til or "O'zbek", fish, sinf, fan, tog, iqt, kasb, startap, yt, taklif))
+            """, (ts, fp, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_tog, takliflar))
             added += 1
             if fp:
                 seen_fps.add(fp)
@@ -328,15 +347,6 @@ def sync_from_google_sheet():
     except Exception as e:
         print(f"Google Sheet auto-sync error: {e}")
         return 0
-
-# Render serveri ishga tushganda yoki qayta yuklanganda avtomatik sinxronlash
-try:
-    _c_init = sync_from_cloud()
-    _s_init = sync_from_google_sheet()
-    if _c_init or _s_init:
-        print(f"Baza muvaffaqiyatli sinxronlandi: +{_c_init} ta bulutdan, +{_s_init} ta Google Sheetdan.")
-except Exception as _startup_sync_err:
-    print(f"Startup sync notice: {_startup_sync_err}")
 
 def generate_fingerprint():
     chars = string.ascii_uppercase + string.digits
@@ -353,11 +363,10 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- Public Routes (Saytga kirganda faqat so'rovnoma ochiladi) ---
+# --- Public Routes ---
 
 @app.route('/')
 def index():
-    # Asosiy sahifada FAQAT so'rovnoma ochiladi!
     return render_template('form.html')
 
 @app.route('/sorovnoma')
@@ -413,7 +422,6 @@ def teacher_portal():
     conn = get_db()
     raw_classes = conn.execute("SELECT DISTINCT sinf FROM sorovnoma WHERE sinf IS NOT NULL AND sinf != '' ORDER BY sinf ASC").fetchall()
     
-    # Sort classes logically: 5-A, 5-B... 11-I
     def class_sort_key(c):
         digits = ''.join(ch for ch in c if ch.isdigit())
         num = int(digits) if digits else 99
@@ -453,6 +461,7 @@ def get_class_data(sinf_name):
     kasblar = {}
     iqtidorlar = {}
     yangi_togaraklar = {}
+    diagnostics = {}
 
     for r in rows:
         t_str = (r['togaraklar'] or '').lower()
@@ -470,11 +479,18 @@ def get_class_data(sinf_name):
             iqtidorlar[item] = iqtidorlar.get(item, 0) + 1
         for item in [x.strip() for x in (r['yangi_togaraklar'] or '').split(',') if x.strip()]:
             yangi_togaraklar[item] = yangi_togaraklar.get(item, 0) + 1
+        
+        diag = (r['asosiy_natija'] or '').strip()
+        if diag:
+            clean_diag = diag.split('(')[0].split(',')[0].strip()
+            if clean_diag:
+                diagnostics[clean_diag] = diagnostics.get(clean_diag, 0) + 1
 
     top_fanlar = sorted(fanlar.items(), key=lambda x: x[1], reverse=True)[:5]
     top_kasblar = sorted(kasblar.items(), key=lambda x: x[1], reverse=True)[:5]
     top_iqtidor = sorted(iqtidorlar.items(), key=lambda x: x[1], reverse=True)[:5]
     top_yangi_togaraklar = sorted(yangi_togaraklar.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_diagnostics = sorted(diagnostics.items(), key=lambda x: x[1], reverse=True)[:5]
 
     return jsonify({
         'status': 'success',
@@ -487,6 +503,7 @@ def get_class_data(sinf_name):
         'top_kasblar': top_kasblar,
         'top_iqtidor': top_iqtidor,
         'top_yangi_togaraklar': top_yangi_togaraklar,
+        'top_diagnostics': top_diagnostics,
         'students': [dict(r) for r in rows]
     })
 
@@ -508,6 +525,7 @@ def sinf_pasporti(sinf_name):
     kasblar = {}
     iqtidorlar = {}
     yangi_togaraklar = {}
+    diagnostics = {}
 
     for r in rows:
         t_str = (r['togaraklar'] or '').lower()
@@ -526,10 +544,17 @@ def sinf_pasporti(sinf_name):
         for item in [x.strip() for x in (r['yangi_togaraklar'] or '').split(',') if x.strip()]:
             yangi_togaraklar[item] = yangi_togaraklar.get(item, 0) + 1
 
+        diag = (r['asosiy_natija'] or '').strip()
+        if diag:
+            clean_diag = diag.split('(')[0].split(',')[0].strip()
+            if clean_diag:
+                diagnostics[clean_diag] = diagnostics.get(clean_diag, 0) + 1
+
     top_fanlar = sorted(fanlar.items(), key=lambda x: x[1], reverse=True)[:6]
     top_kasblar = sorted(kasblar.items(), key=lambda x: x[1], reverse=True)[:5]
     top_iqtidor = sorted(iqtidorlar.items(), key=lambda x: x[1], reverse=True)[:5]
     top_yangi_togaraklar = sorted(yangi_togaraklar.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_diagnostics = sorted(diagnostics.items(), key=lambda x: x[1], reverse=True)[:5]
 
     stats = {
         'total': total,
@@ -539,12 +564,53 @@ def sinf_pasporti(sinf_name):
         'top_fanlar': top_fanlar,
         'top_kasblar': top_kasblar,
         'top_iqtidor': top_iqtidor,
-        'top_yangi_togaraklar': top_yangi_togaraklar
+        'top_yangi_togaraklar': top_yangi_togaraklar,
+        'top_diagnostics': top_diagnostics
     }
 
     return render_template('sinf_pasporti.html', sinf=sinf_name, stats=stats, students=[dict(r) for r in rows], today=datetime.now().strftime('%d.%m.%Y'))
 
-# --- API Routes ---
+# --- Questions API ---
+
+@app.route('/api/questions')
+def get_questions():
+    """Returns question specs for dynamic survey form"""
+    grade = request.args.get('grade', '').strip()
+    test_type = request.args.get('type', '').strip()
+    lang = request.args.get('lang', 'uz').strip()
+    if lang not in ['uz', 'ru']:
+        lang = 'uz'
+
+    if not test_type and grade:
+        digits = ''.join(ch for ch in grade if ch.isdigit())
+        g_num = int(digits) if digits else 0
+        if g_num in [5, 6]:
+            test_type = '5-6-sinf'
+        elif g_num in [7, 8]:
+            test_type = '7-8-sinf'
+        elif g_num in [9, 10, 11]:
+            test_type = '9-11-sinf'
+
+    if test_type == '5-6-sinf':
+        return jsonify({'status': 'success', 'test_turi': '5-6-sinf', 'data': sq.SURVEY_5_6[lang]})
+    elif test_type == '7-8-sinf':
+        return jsonify({'status': 'success', 'test_turi': '7-8-sinf', 'data': sq.SURVEY_7_8[lang]})
+    elif test_type == '9-11-sinf':
+        return jsonify({'status': 'success', 'test_turi': '9-11-sinf', 'data': sq.SURVEY_9_11[lang]})
+    elif test_type == 'tashkilot':
+        return jsonify({'status': 'success', 'test_turi': 'tashkilot', 'data': sq.SURVEY_TASHKILOT[lang]})
+
+    return jsonify({
+        'status': 'success',
+        'surveys': {
+            '5-6-sinf': sq.SURVEY_5_6[lang],
+            '7-8-sinf': sq.SURVEY_7_8[lang],
+            '9-11-sinf': sq.SURVEY_9_11[lang],
+            'tashkilot': sq.SURVEY_TASHKILOT[lang]
+        }
+    })
+
+# --- Entries API ---
 
 @app.route('/api/entries', methods=['GET'])
 @admin_required
@@ -553,14 +619,15 @@ def get_entries():
     sinf = request.args.get('sinf', '').strip()
     til = request.args.get('til', '').strip()
     kasb = request.args.get('kasb', '').strip()
+    test_turi = request.args.get('test_turi', '').strip()
     togaraksiz = request.args.get('togaraksiz', '').strip()
 
     sql = "SELECT * FROM sorovnoma WHERE 1=1"
     params = []
 
     if query:
-        sql += " AND (LOWER(fish) LIKE ? OR LOWER(fingerprint) LIKE ? OR LOWER(takliflar) LIKE ? OR LOWER(iqtidor) LIKE ? OR LOWER(kasb) LIKE ?)"
-        params.extend([f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%"])
+        sql += " AND (LOWER(fish) LIKE ? OR LOWER(fingerprint) LIKE ? OR LOWER(takliflar) LIKE ? OR LOWER(iqtidor) LIKE ? OR LOWER(kasb) LIKE ? OR LOWER(asosiy_natija) LIKE ?)"
+        params.extend([f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%"])
     if sinf:
         if sinf.endswith('-sinf') or sinf.isdigit() or sinf.endswith('-klass') or sinf.endswith('-класс'):
             grade_num = sinf.split('-')[0]
@@ -572,9 +639,12 @@ def get_entries():
     if til:
         sql += " AND til = ?"
         params.append(til)
+    if test_turi:
+        sql += " AND test_turi = ?"
+        params.append(test_turi)
     if kasb:
-        sql += " AND LOWER(kasb) LIKE ?"
-        params.append(f"%{kasb.lower()}%")
+        sql += " AND (LOWER(kasb) LIKE ? OR LOWER(asosiy_natija) LIKE ?)"
+        params.extend([f"%{kasb.lower()}%", f"%{kasb.lower()}%"])
     if togaraksiz == '1':
         sql += " AND (LOWER(togaraklar) LIKE '%bormayman%' OR LOWER(togaraklar) LIKE '%yoq%' OR LOWER(togaraklar) LIKE '%yo''q%' OR togaraklar = '' OR togaraklar IS NULL)"
 
@@ -587,22 +657,39 @@ def get_entries():
     entries = [dict(row) for row in rows]
     return jsonify({'status': 'success', 'count': len(entries), 'data': entries})
 
-# POST: Har kim (o'quvchi) so'rovnoma to'ldirishi uchun ochiq
+# POST: Har bir o'quvchi so'rovnoma to'ldirishi uchun ochiq
 @app.route('/api/entries', methods=['POST'])
 def add_entry():
     data = request.get_json() or {}
 
     fish = data.get('fish', '').strip()
     sinf = data.get('sinf', '').strip()
+    til = data.get('til', "O'zbek").strip()
+    test_turi = data.get('test_turi', '').strip()
+    answers = data.get('answers') or {}
 
     if not fish or not sinf:
         return jsonify({'status': 'error', 'message': "F.I.Sh. va Sinf maydonlarini to'ldirish shart!"}), 400
 
+    # Determine grade number
+    digits = ''.join(ch for ch in sinf if ch.isdigit())
+    grade_num = int(digits) if digits else 0
+
+    if not test_turi:
+        if grade_num in [5, 6]:
+            test_turi = '5-6-sinf'
+        elif grade_num in [7, 8]:
+            test_turi = '7-8-sinf'
+        elif grade_num in [9, 10, 11]:
+            test_turi = '9-11-sinf'
+        else:
+            test_turi = '5-6-sinf'
+
     # Anti-duplicate / Spam protection: check if same fish and sinf was submitted in last 2 minutes
     conn = get_db()
     recent = conn.execute(
-        "SELECT id, timestamp FROM sorovnoma WHERE LOWER(fish) = ? AND sinf = ? ORDER BY id DESC LIMIT 1",
-        (fish.lower(), sinf)
+        "SELECT id, timestamp FROM sorovnoma WHERE LOWER(fish) = ? AND sinf = ? AND test_turi = ? ORDER BY id DESC LIMIT 1",
+        (fish.lower(), sinf, test_turi)
     ).fetchone()
     if recent:
         try:
@@ -612,15 +699,19 @@ def add_entry():
                 conn.close()
                 return jsonify({
                     'status': 'error',
-                    'message': f"Hurmatli {fish}, sizning anketangiz qabul qilingan! Qayta yuborish talab etilmaydi."
+                    'message': f"Hurmatli {fish}, sizning ushbu test bo'yicha anketangiz qabul qilingan! Qayta yuborish talab etilmaydi."
                 }), 400
         except Exception:
             pass
 
-    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    timestamp = data.get('timestamp') or now_str
-    fingerprint = data.get('fingerprint') or generate_fingerprint()
-    til = data.get('til', "O'zbek").strip()
+    lang_code = 'ru' if 'рус' in til.lower() or til.lower() == 'ru' else 'uz'
+
+    # Scoring and evaluation
+    asosiy_natija = ""
+    ballar_json = "{}"
+    tavsiya = ""
+    scored_result = None
+
     fanlar = data.get('fanlar', '')
     if isinstance(fanlar, list):
         fanlar = ", ".join(fanlar)
@@ -637,11 +728,75 @@ def add_entry():
         yangi_togaraklar = ", ".join(yangi_togaraklar)
     takliflar = data.get('takliflar', '').strip()
 
+    if test_turi == '7-8-sinf':
+        scored_result = sq.score_test_7_8(answers, lang=lang_code)
+        top_name = scored_result.get('top_name', '')
+        top_sc = scored_result.get('top_score', 0)
+        asosiy_natija = f"{top_name} ({top_sc}/5)"
+        ballar_json = json.dumps(scored_result['scores'], ensure_ascii=False)
+        tavsiya = scored_result.get('recommendation', '')
+        iqtidor = top_name
+        kasb = tavsiya
+    elif test_turi == '9-11-sinf':
+        scored_result = sq.score_test_9_11(answers, lang=lang_code)
+        sorted_spheres = scored_result.get('sorted', [])
+        top_strs = [f"{s['name']} ({s['score']}/5)" for s in sorted_spheres[:2]]
+        asosiy_natija = ", ".join(top_strs) if top_strs else scored_result.get('top_name', '')
+        ballar_json = json.dumps(scored_result['scores'], ensure_ascii=False)
+        tavsiya = scored_result.get('recommendation', '')
+        iqtidor = ", ".join([s['name'] for s in sorted_spheres[:2]])
+        kasb = scored_result.get('top_name', '')
+    elif test_turi == 'tashkilot':
+        scored_result = sq.score_test_tashkilot(answers, lang=lang_code)
+        asosiy_natija = f"{scored_result['level']} ({scored_result['score']}/20 ball)"
+        ballar_json = json.dumps({'total_score': scored_result['score'], 'level': scored_result['level']}, ensure_ascii=False)
+        tavsiya = scored_result['description']
+        iqtidor = "Tashkilotchilik va yetakchilik qobiliyati"
+    else:  # 5-6-sinf
+        if not fanlar and '1' in answers:
+            val = answers.get('1')
+            fanlar = ", ".join(val) if isinstance(val, list) else str(val)
+        if not togaraklar and '2' in answers:
+            val = answers.get('2')
+            togaraklar = ", ".join(val) if isinstance(val, list) else str(val)
+        if not iqtidor and '3' in answers:
+            val = answers.get('3')
+            iqtidor = ", ".join(val) if isinstance(val, list) else str(val)
+        if not kasb and '4' in answers:
+            kasb = str(answers.get('4'))
+        if not takliflar and '5' in answers:
+            takliflar = str(answers.get('5'))
+
+        asosiy_natija = kasb or (iqtidor and f"Qobiliyat: {iqtidor}") or "Qiziqishlar so'rovnomasi"
+        ballar_json = json.dumps({'fanlar': fanlar, 'kasb': kasb, 'iqtidor': iqtidor, 'togaraklar': togaraklar}, ensure_ascii=False)
+        tavsiya = f"Tavsiya etilgan soha: {kasb or 'Qiziqishlariga mos to''garaklar'}"
+        scored_result = {
+            'type': '5-6-sinf',
+            'asosiy_natija': asosiy_natija,
+            'fanlar': fanlar,
+            'kasb': kasb,
+            'iqtidor': iqtidor,
+            'tavsiya': tavsiya
+        }
+
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = data.get('timestamp') or now_str
+    fingerprint = data.get('fingerprint') or generate_fingerprint()
+    javoblar_json = json.dumps(answers, ensure_ascii=False)
+
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO sorovnoma (timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar))
+        INSERT INTO sorovnoma (
+            timestamp, fingerprint, til, fish, sinf, test_turi,
+            asosiy_natija, ballar_json, javoblar_json, tavsiya, qoshimcha,
+            fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        timestamp, fingerprint, til, fish, sinf, test_turi,
+        asosiy_natija, ballar_json, javoblar_json, tavsiya, '',
+        fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar
+    ))
     new_id = cursor.lastrowid
     conn.commit()
     conn.close()
@@ -653,6 +808,11 @@ def add_entry():
         'til': til,
         'fish': fish,
         'sinf': sinf,
+        'test_turi': test_turi,
+        'asosiy_natija': asosiy_natija,
+        'ballar_json': ballar_json,
+        'javoblar_json': javoblar_json,
+        'tavsiya': tavsiya,
         'fanlar': fanlar,
         'togaraklar': togaraklar,
         'iqtidor': iqtidor,
@@ -662,14 +822,13 @@ def add_entry():
         'takliflar': takliflar
     }
 
-    # Doimiy saqlash: Yangi anketani avtomatik ravishda GitHub Cloud Storage ga yozish
+    # Cloud sync
     async_push_to_cloud(entry_payload)
 
-    # Webhook orqali Google Sheet'ga ham bir vaqtda saqlash
+    # Webhook orqali tashqi tizimga yuborish (agar sozlangan bo'lsa)
     if GOOGLE_SHEET_WEBHOOK_URL:
         try:
             import urllib.request
-            import json
             req_hook = urllib.request.Request(
                 GOOGLE_SHEET_WEBHOOK_URL,
                 data=json.dumps(entry_payload).encode('utf-8'),
@@ -681,8 +840,9 @@ def add_entry():
 
     return jsonify({
         'status': 'success',
-        'message': "Ma'lumot muvaffaqiyatli saqlandi!",
-        'data': entry_payload
+        'message': "So'rovnoma muvaffaqiyatli qabul qilindi!",
+        'data': entry_payload,
+        'result': scored_result
     }), 201
 
 @app.route('/api/sync-google-sheet', methods=['POST'])
@@ -693,7 +853,7 @@ def api_sync_google_sheet():
     total_added = c_added + s_added
     return jsonify({
         'status': 'success',
-        'message': f"Baza to'liq sinxronlandi! Bulutli baza: +{c_added}, Google Sheet: +{s_added}. Jami yangi: {total_added} ta.",
+        'message': f"Baza sinxronlandi! Bulut: +{c_added}, Sheet: +{s_added}. Jami yangi: {total_added} ta.",
         'added': total_added
     })
 
@@ -720,27 +880,45 @@ def update_entry(entry_id):
     fish = data.get('fish', row['fish']).strip()
     sinf = data.get('sinf', row['sinf']).strip()
     til = data.get('til', row['til']).strip()
+    test_turi = data.get('test_turi', row['test_turi']).strip()
+    asosiy_natija = data.get('asosiy_natija', row['asosiy_natija']).strip()
+    tavsiya = data.get('tavsiya', row['tavsiya']).strip()
     fanlar = data.get('fanlar', row['fanlar'])
-    if isinstance(fanlar, list): fanlar = ", ".join(fanlar)
+    if isinstance(fanlar, list):
+        fanlar = ", ".join(fanlar)
     togaraklar = data.get('togaraklar', row['togaraklar'])
-    if isinstance(togaraklar, list): togaraklar = ", ".join(togaraklar)
+    if isinstance(togaraklar, list):
+        togaraklar = ", ".join(togaraklar)
     iqtidor = data.get('iqtidor', row['iqtidor'])
-    if isinstance(iqtidor, list): iqtidor = ", ".join(iqtidor)
+    if isinstance(iqtidor, list):
+        iqtidor = ", ".join(iqtidor)
     kasb = data.get('kasb', row['kasb']).strip()
     startap = data.get('startap', row['startap']).strip()
     yangi_togaraklar = data.get('yangi_togaraklar', row['yangi_togaraklar'])
-    if isinstance(yangi_togaraklar, list): yangi_togaraklar = ", ".join(yangi_togaraklar)
+    if isinstance(yangi_togaraklar, list):
+        yangi_togaraklar = ", ".join(yangi_togaraklar)
     takliflar = data.get('takliflar', row['takliflar']).strip()
 
     conn.execute('''
         UPDATE sorovnoma
-        SET fish = ?, sinf = ?, til = ?, fanlar = ?, togaraklar = ?, iqtidor = ?, kasb = ?, startap = ?, yangi_togaraklar = ?, takliflar = ?
+        SET fish = ?, sinf = ?, til = ?, test_turi = ?, asosiy_natija = ?, tavsiya = ?,
+            fanlar = ?, togaraklar = ?, iqtidor = ?, kasb = ?, startap = ?,
+            yangi_togaraklar = ?, takliflar = ?
         WHERE id = ?
-    ''', (fish, sinf, til, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar, entry_id))
+    ''', (fish, sinf, til, test_turi, asosiy_natija, tavsiya, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar, entry_id))
     conn.commit()
+
+    updated_row = conn.execute("SELECT * FROM sorovnoma WHERE id = ?", (entry_id,)).fetchone()
     conn.close()
 
-    return jsonify({'status': 'success', 'message': "Yozuv yangilandi!"})
+    updated_dict = dict(updated_row)
+    async_push_to_cloud(updated_dict)
+
+    return jsonify({
+        'status': 'success',
+        'message': "Ma'lumot yangilandi!",
+        'data': updated_dict
+    })
 
 @app.route('/api/entries/<int:entry_id>', methods=['DELETE'])
 @admin_required
@@ -779,6 +957,8 @@ def get_stats():
     yangi_togaraklar = {}
     fanlar = {}
     iqtidorlar = {}
+    test_turlari = {}
+    natijalar = {}
 
     for r in rows:
         s = r['sinf'] or 'Noma\'lum'
@@ -786,6 +966,15 @@ def get_stats():
 
         t = r['til'] or 'O\'zbek'
         tillari[t] = tillari.get(t, 0) + 1
+
+        tt = r['test_turi'] or 'Boshqa'
+        test_turlari[tt] = test_turlari.get(tt, 0) + 1
+
+        res = (r['asosiy_natija'] or '').strip()
+        if res:
+            clean_res = res.split('(')[0].split(',')[0].strip()
+            if clean_res:
+                natijalar[clean_res] = natijalar.get(clean_res, 0) + 1
 
         k = (r['kasb'] or '').strip()
         if k:
@@ -807,15 +996,18 @@ def get_stats():
     top_yangi_togaraklar = sorted(yangi_togaraklar.items(), key=lambda x: x[1], reverse=True)[:10]
     top_fanlar = sorted(fanlar.items(), key=lambda x: x[1], reverse=True)[:10]
     top_iqtidorlar = sorted(iqtidorlar.items(), key=lambda x: x[1], reverse=True)[:8]
+    top_natijalar = sorted(natijalar.items(), key=lambda x: x[1], reverse=True)[:10]
 
     return jsonify({
         'total': total,
         'sinflar': sinflar,
         'tillari': tillari,
+        'test_turlari': test_turlari,
         'top_kasblar': top_kasblar,
         'top_yangi_togaraklar': top_yangi_togaraklar,
         'top_fanlar': top_fanlar,
-        'top_iqtidorlar': top_iqtidorlar
+        'top_iqtidorlar': top_iqtidorlar,
+        'top_natijalar': top_natijalar
     })
 
 # --- Export Routes ---
@@ -823,29 +1015,37 @@ def get_stats():
 @app.route('/export/excel')
 def export_excel():
     sinf = request.args.get('sinf', '').strip()
+    test_turi = request.args.get('test_turi', '').strip()
     if not sinf and not session.get('is_admin'):
         return redirect(url_for('admin_login', next=request.path))
 
-    conn = get_db()
+    sql = "SELECT * FROM sorovnoma WHERE 1=1"
+    params = []
     if sinf:
         if sinf.endswith('-sinf') or sinf.isdigit() or sinf.endswith('-klass') or sinf.endswith('-класс'):
             grade_num = sinf.split('-')[0]
-            rows = conn.execute("SELECT * FROM sorovnoma WHERE (sinf = ? OR sinf LIKE ? OR sinf LIKE ?) ORDER BY sinf ASC, fish ASC", (sinf, f"{grade_num}-%", f"{grade_num}-класс%")).fetchall()
+            sql += " AND (sinf = ? OR sinf LIKE ? OR sinf LIKE ?)"
+            params.extend([sinf, f"{grade_num}-%", f"{grade_num}-класс%"])
         else:
-            rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma WHERE sinf = ? ORDER BY id ASC", (sinf,)).fetchall()
-        sheet_title = f"{sinf} sinf"
-        filename = f"Sorovnoma_{sinf}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-    else:
-        rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma ORDER BY id ASC").fetchall()
-        sheet_title = "Barcha natijalar"
-        filename = f"Sorovnoma_35maktab_Barchasi_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            sql += " AND sinf = ?"
+            params.append(sinf)
+    if test_turi:
+        sql += " AND test_turi = ?"
+        params.append(test_turi)
+    sql += " ORDER BY sinf ASC, fish ASC"
+
+    conn = get_db()
+    rows = conn.execute(sql, params).fetchall()
     conn.close()
+
+    sheet_title = f"{sinf} sinf" if sinf else "Barcha natijalar"
+    filename = f"Sorovnoma_{sinf or '35maktab'}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
 
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = sheet_title
 
-    # Albomniy A4 format sozlamalari (100% Landscape Print-ready)
+    # Albom A4 sozlamalari
     ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
     ws.page_setup.paperSize = ws.PAPERSIZE_A4
     ws.page_setup.fitToPage = True
@@ -859,9 +1059,9 @@ def export_excel():
     ws.page_margins.bottom = 0.4
 
     headers = [
-        "№", "F.I.Sh.", "Sinf", "Til", "Qiziqadigan fanlar",
-        "Qatnashayotgan to'garaklar", "Iqtidor sohasi", "Kelajak kasbi",
-        "Startap loyihasi", "Yangi to'garaklar taklifi", "Qo'shimcha takliflar", "Sana va vaqt"
+        "№", "F.I.Sh.", "Sinf", "Til", "Test turi", "Asosiy natija / Tashxis",
+        "Psixologik tavsiya", "Kelajak kasbi", "Qiziqadigan fanlar",
+        "To'garaklar", "Startap", "Takliflar", "Sana va vaqt"
     ]
 
     header_fill = PatternFill(start_color="107C41", end_color="107C41", fill_type="solid")
@@ -893,12 +1093,13 @@ def export_excel():
             row['fish'] or '',
             row['sinf'] or '',
             row['til'] or '',
+            row['test_turi'] or '',
+            row['asosiy_natija'] or '',
+            row['tavsiya'] or '',
+            row['kasb'] or '',
             row['fanlar'] or '',
             row['togaraklar'] or '',
-            row['iqtidor'] or '',
-            row['kasb'] or '',
             row['startap'] or '',
-            row['yangi_togaraklar'] or '',
             row['takliflar'] or '',
             (row['timestamp'] or '')[:16]
         ]
@@ -908,27 +1109,28 @@ def export_excel():
             cell = ws.cell(row=r_idx, column=col_num)
             cell.font = Font(name="Arial", size=9)
             cell.border = thin_border
-            if col_num in [1, 3, 4, 12]:
+            if col_num in [1, 3, 4, 5, 13]:
                 cell.alignment = center_align
             else:
                 cell.alignment = left_align
             if is_alt:
                 cell.fill = alt_fill
-        ws.row_dimensions[r_idx].height = 20
+        ws.row_dimensions[r_idx].height = 22
 
     col_widths = {
         'A': 5,   # №
-        'B': 26,  # F.I.Sh.
+        'B': 25,  # F.I.Sh.
         'C': 8,   # Sinf
         'D': 8,   # Til
-        'E': 22,  # Qiziqadigan fanlar
-        'F': 22,  # Togaraklar
-        'G': 22,  # Iqtidor sohasi
+        'E': 14,  # Test turi
+        'F': 26,  # Asosiy natija
+        'G': 26,  # Tavsiya
         'H': 18,  # Kelajak kasbi
-        'I': 18,  # Startap
-        'J': 22,  # Yangi togaraklar
-        'K': 24,  # Qoshimcha takliflar
-        'L': 14   # Sana
+        'I': 20,  # Fanlar
+        'J': 20,  # Togaraklar
+        'K': 16,  # Startap
+        'L': 20,  # Takliflar
+        'M': 14   # Sana
     }
     for col_letter, width in col_widths.items():
         ws.column_dimensions[col_letter].width = width
@@ -952,26 +1154,28 @@ def export_csv():
     if sinf:
         if sinf.endswith('-sinf') or sinf.isdigit() or sinf.endswith('-klass') or sinf.endswith('-класс'):
             grade_num = sinf.split('-')[0]
-            rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma WHERE (sinf = ? OR sinf LIKE ? OR sinf LIKE ?) ORDER BY id ASC", (sinf, f"{grade_num}-%", f"{grade_num}-класс%")).fetchall()
+            rows = conn.execute("SELECT * FROM sorovnoma WHERE (sinf = ? OR sinf LIKE ? OR sinf LIKE ?) ORDER BY id ASC", (sinf, f"{grade_num}-%", f"{grade_num}-класс%")).fetchall()
         else:
-            rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma WHERE sinf = ? ORDER BY id ASC", (sinf,)).fetchall()
+            rows = conn.execute("SELECT * FROM sorovnoma WHERE sinf = ? ORDER BY id ASC", (sinf,)).fetchall()
         filename = f"Sorovnoma_{sinf}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     else:
-        rows = conn.execute("SELECT timestamp, fingerprint, til, fish, sinf, fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar FROM sorovnoma ORDER BY id ASC").fetchall()
+        rows = conn.execute("SELECT * FROM sorovnoma ORDER BY id ASC").fetchall()
         filename = f"Sorovnoma_35maktab_Barchasi_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     conn.close()
 
     headers = [
         "Sana va vaqt", "Fingerprint", "Til", "F.I.Sh.", "Sinf",
-        "Qiziqadigan fanlar", "Togaraklar", "Iqtidor sohasi", "Kelajak kasbi",
-        "Startap loyihasi", "Yangi togaraklar taklifi", "Qoshimcha takliflar"
+        "Test turi", "Asosiy natija", "Tavsiya", "Kelajak kasbi", "Fanlar", "Togaraklar"
     ]
 
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(headers)
     for r in rows:
-        writer.writerow(list(r))
+        writer.writerow([
+            r['timestamp'], r['fingerprint'], r['til'], r['fish'], r['sinf'],
+            r['test_turi'], r['asosiy_natija'], r['tavsiya'], r['kasb'], r['fanlar'], r['togaraklar']
+        ])
 
     mem = io.BytesIO()
     mem.write(output.getvalue().encode('utf-8-sig'))
@@ -998,7 +1202,6 @@ def export_togarak_excel():
     ws = wb.active
     ws.title = "Qabul ro'yxati"
 
-    # Albom A4 sozlamalari
     ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
     ws.page_setup.paperSize = ws.PAPERSIZE_A4
     ws.page_setup.fitToPage = True
@@ -1039,7 +1242,7 @@ def export_togarak_excel():
             row['fish'] or '',
             row['sinf'] or '',
             row['til'] or '',
-            row['iqtidor'] or '',
+            row['iqtidor'] or row['asosiy_natija'] or '',
             row['kasb'] or '',
             row['yangi_togaraklar'] or '',
             row['takliflar'] or '',
@@ -1060,15 +1263,7 @@ def export_togarak_excel():
         ws.row_dimensions[r_idx].height = 20
 
     col_widths = {
-        'A': 5,
-        'B': 26,
-        'C': 8,
-        'D': 8,
-        'E': 22,
-        'F': 20,
-        'G': 30,
-        'H': 26,
-        'I': 14
+        'A': 5, 'B': 26, 'C': 8, 'D': 8, 'E': 22, 'F': 20, 'G': 30, 'H': 26, 'I': 14
     }
     for col_letter, width in col_widths.items():
         ws.column_dimensions[col_letter].width = width

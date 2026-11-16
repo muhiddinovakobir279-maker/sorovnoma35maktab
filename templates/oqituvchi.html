@@ -195,9 +195,9 @@
                             <th class="py-3 px-3">Til</th>
                             <th class="py-3 px-4 min-w-[180px]">Qiziqadigan fanlar</th>
                             <th class="py-3 px-4 min-w-[180px]">To'garaklar</th>
-                            <th class="py-3 px-4 min-w-[180px]">Iqtidor sohasi</th>
+                            <th class="py-3 px-4 min-w-[200px]">Asosiy Tashxis / Qobiliyat</th>
                             <th class="py-3 px-4 min-w-[160px]">Kelajak kasbi</th>
-                            <th class="py-3 px-4 min-w-[160px]">Startap loyihasi</th>
+                            <th class="py-3 px-4 min-w-[180px]">Psixologik tavsiya</th>
                         </tr>
                     </thead>
                     <tbody id="classStudentsBody" class="divide-y divide-gray-100">
@@ -358,9 +358,9 @@
                 </td>
                 <td class="py-2.5 px-4 text-gray-700 truncate max-w-[200px]" title="${escapeHtml(item.fanlar)}">${escapeHtml(item.fanlar) || '-'}</td>
                 <td class="py-2.5 px-4 truncate max-w-[200px]" title="${escapeHtml(item.togaraklar)}">${clubBadge}</td>
-                <td class="py-2.5 px-4 text-gray-700 truncate max-w-[200px]" title="${escapeHtml(item.iqtidor)}">${escapeHtml(item.iqtidor) || '-'}</td>
+                <td class="py-2.5 px-4 font-bold text-emerald-800 truncate max-w-[200px]" title="${escapeHtml(item.asosiy_natija || item.iqtidor)}">${escapeHtml(item.asosiy_natija || item.iqtidor) || '-'}</td>
                 <td class="py-2.5 px-4 font-semibold text-blue-800 truncate max-w-[160px]" title="${escapeHtml(item.kasb)}">${escapeHtml(item.kasb) || '-'}</td>
-                <td class="py-2.5 px-4 text-gray-600 italic truncate max-w-[160px]" title="${escapeHtml(item.startap)}">${escapeHtml(item.startap) || '-'}</td>
+                <td class="py-2.5 px-4 text-gray-600 truncate max-w-[180px]" title="${escapeHtml(item.tavsiya)}">${escapeHtml(item.tavsiya) || '-'}</td>
             </tr>
             `;
         }).join('');

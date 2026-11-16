@@ -13,12 +13,14 @@ async function loadEntries() {
     const sinf = document.getElementById('filterSinf')?.value || '';
     const til = document.getElementById('filterTil')?.value || '';
     const kasb = document.getElementById('filterKasb')?.value.trim() || '';
+    const testTuri = document.getElementById('filterTestTuri')?.value || '';
 
     const params = new URLSearchParams();
     if (q) params.append('q', q);
     if (sinf) params.append('sinf', sinf);
     if (til) params.append('til', til);
     if (kasb) params.append('kasb', kasb);
+    if (testTuri) params.append('test_turi', testTuri);
 
     try {
         const res = await fetch(`/api/entries?${params.toString()}`);
@@ -37,35 +39,6 @@ async function loadEntries() {
     } catch (err) {
         console.error("Ma'lumot yuklashda xatolik:", err);
         showToast("Ma'lumotlarni yuklab bo'lmadi", "error");
-    }
-}
-
-async function syncGoogleSheet() {
-    const btn = document.getElementById('btnSyncSheet');
-    const origHtml = btn ? btn.innerHTML : '';
-    if (btn) {
-        btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-600"></i> <span>Sinxronlanmoqda...</span>';
-        btn.disabled = true;
-        lucide.createIcons();
-    }
-    try {
-        const res = await fetch('/api/sync-google-sheet', { method: 'POST' });
-        const data = await res.json();
-        if (data.status === 'success') {
-            showToast(data.message, 'success');
-            await loadEntries();
-        } else {
-            showToast(data.message || 'Sinxronlashda xatolik', 'error');
-        }
-    } catch (err) {
-        console.error(err);
-        showToast("Google Sheet bilan bog'lanishda xatolik", 'error');
-    } finally {
-        if (btn) {
-            btn.innerHTML = origHtml;
-            btn.disabled = false;
-            lucide.createIcons();
-        }
     }
 }
 
@@ -91,11 +64,13 @@ function onClassFilterChange() {
 
 function exportFilteredExcel() {
     const sinf = document.getElementById('filterSinf')?.value || '';
-    if (sinf) {
-        window.location.href = `/export/excel?sinf=${encodeURIComponent(sinf)}`;
-    } else {
-        window.location.href = '/export/excel';
-    }
+    const testTuri = document.getElementById('filterTestTuri')?.value || '';
+    const params = new URLSearchParams();
+    if (sinf) params.append('sinf', sinf);
+    if (testTuri) params.append('test_turi', testTuri);
+
+    const qs = params.toString();
+    window.location.href = qs ? `/export/excel?${qs}` : '/export/excel';
 }
 
 function setTalentFilter(category) {
@@ -108,20 +83,16 @@ function setTalentFilter(category) {
         'sport': 'tabTalentSport',
         'biznes': 'tabTalentBiz',
         'sanat': 'tabTalentArt',
-        'togaraksiz': 'tabTalentNoClub'
+        'aniq': 'tabTalentMath'
     };
 
     Object.entries(tabs).forEach(([cat, id]) => {
         const el = document.getElementById(id);
         if (!el) return;
         if (cat === category) {
-            el.className = cat === 'togaraksiz'
-                ? "px-3 py-1.5 rounded-xl font-bold bg-rose-600 text-white shadow-sm transition-all whitespace-nowrap"
-                : "px-3 py-1.5 rounded-xl font-bold bg-emerald-600 text-white shadow-sm transition-all whitespace-nowrap";
+            el.className = "px-3 py-1.5 rounded-xl font-bold bg-emerald-600 text-white shadow-sm transition-all whitespace-nowrap";
         } else {
-            el.className = cat === 'togaraksiz'
-                ? "px-3 py-1.5 rounded-xl font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 transition-all whitespace-nowrap border border-rose-200"
-                : "px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-all whitespace-nowrap";
+            el.className = "px-3 py-1.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-all whitespace-nowrap";
         }
     });
 
@@ -133,21 +104,19 @@ function applyTalentFilterAndRender() {
         currentEntries = [...rawEntries];
     } else {
         currentEntries = rawEntries.filter(item => {
-            if (activeTalentCategory === 'togaraksiz') {
-                const t = (item.togaraklar || '').toLowerCase();
-                return !t || t.includes('bormayman') || t.includes('yoq') || t.includes("yo'q");
-            }
-            const str = `${item.iqtidor} ${item.kasb} ${item.yangi_togaraklar} ${item.fanlar} ${item.togaraklar}`.toLowerCase();
+            const str = `${item.asosiy_natija || ''} ${item.iqtidor || ''} ${item.kasb || ''} ${item.fanlar || ''} ${item.tavsiya || ''}`.toLowerCase();
             if (activeTalentCategory === 'it') {
-                return str.includes('it') || str.includes('dastur') || str.includes('robot') || str.includes('veb') || str.includes('informatika');
+                return str.includes('it') || str.includes('dastur') || str.includes('robot') || str.includes('elektron') || str.includes('informatika');
             } else if (activeTalentCategory === 'tibbiyot') {
-                return str.includes('shifokor') || str.includes('tibbiyot') || str.includes('vrach') || str.includes('biologiya') || str.includes('kimyo') || str.includes('jarroh') || str.includes('stomatolog');
+                return str.includes('tibbiyot') || str.includes('shifokor') || str.includes('biolog') || str.includes('kimyo') || str.includes('pedagog');
             } else if (activeTalentCategory === 'sport') {
-                return str.includes('sport') || str.includes('harbiy') || str.includes('futbol') || str.includes('shaxmat') || str.includes('basketbol') || str.includes('jismoniy');
+                return str.includes('sport') || str.includes('harbiy') || str.includes('futbol') || str.includes('jismoniy');
             } else if (activeTalentCategory === 'biznes') {
-                return str.includes('biznes') || str.includes('tadbirkor') || str.includes('startap') || str.includes('moliya') || str.includes('iqtisod') || str.includes('bank') || str.includes('yetakchilik');
+                return str.includes('tadbirkor') || str.includes('biznes') || str.includes('tashkilot') || str.includes('iqtisod');
             } else if (activeTalentCategory === 'sanat') {
-                return str.includes("san'at") || str.includes('sanat') || str.includes('rasm') || str.includes('musiqa') || str.includes('dizayn') || str.includes('raqs') || str.includes('ijod');
+                return str.includes('sanat') || str.includes("san'at") || str.includes('adabiyot') || str.includes('musiqa') || str.includes('tasviriy') || str.includes('sahna');
+            } else if (activeTalentCategory === 'aniq') {
+                return str.includes('matemat') || str.includes('fizika') || str.includes('texnika') || str.includes('konstruktor');
             }
             return true;
         });
@@ -186,12 +155,29 @@ function renderTable(entries) {
 
         const sinfBadge = `<span class="px-2.5 py-0.5 rounded-lg text-[11px] font-extrabold bg-gray-100 text-gray-800 border border-gray-200">${escapeHtml(item.sinf)}</span>`;
 
+        let testBadgeColor = "bg-gray-100 text-gray-700 border-gray-200";
+        let testLabel = item.test_turi || '-';
+        if (item.test_turi === '5-6-sinf') {
+            testBadgeColor = "bg-blue-50 text-blue-700 border-blue-200";
+            testLabel = "5-6-sinf";
+        } else if (item.test_turi === '7-8-sinf') {
+            testBadgeColor = "bg-emerald-50 text-emerald-800 border-emerald-200";
+            testLabel = "7-8-sinf";
+        } else if (item.test_turi === '9-11-sinf') {
+            testBadgeColor = "bg-purple-50 text-purple-800 border-purple-200";
+            testLabel = "9-11-sinf";
+        } else if (item.test_turi === 'tashkilot') {
+            testBadgeColor = "bg-amber-50 text-amber-800 border-amber-200";
+            testLabel = "Tashkilot";
+        }
+        const testBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold border ${testBadgeColor}">${testLabel}</span>`;
+
         html += `
         <tr class="sheet-row border-b border-gray-200 transition-colors bg-white">
             <td class="px-2 py-2.5 text-center text-gray-400 font-mono text-[11px] bg-gray-50 select-none">${index + 1}</td>
             <td class="px-3 py-2.5 text-gray-600 font-mono text-[11px]">${escapeHtml(item.timestamp)}</td>
             <td class="px-3 py-2.5">
-                <span onclick="copyToClipboard('${escapeHtml(item.fingerprint)}')" class="cursor-pointer font-mono font-bold text-[11px] text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-200" title="Nusxa olish uchun bosing">
+                <span onclick="copyToClipboard('${escapeHtml(item.fingerprint)}')" class="cursor-pointer font-mono font-bold text-[11px] text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-200" title="Nusxa olish">
                     ${escapeHtml(item.fingerprint)}
                 </span>
             </td>
@@ -202,18 +188,22 @@ function renderTable(entries) {
                 </button>
             </td>
             <td class="px-3 py-2.5">${sinfBadge}</td>
-            <td class="px-3 py-2.5 text-gray-700 truncate max-w-[220px]" title="${escapeHtml(item.fanlar)}">${escapeHtml(item.fanlar) || '-'}</td>
-            <td class="px-3 py-2.5 text-gray-700 truncate max-w-[220px]" title="${escapeHtml(item.togaraklar)}">${escapeHtml(item.togaraklar) || '-'}</td>
-            <td class="px-3 py-2.5 text-gray-700 truncate max-w-[220px]" title="${escapeHtml(item.iqtidor)}">${escapeHtml(item.iqtidor) || '-'}</td>
-            <td class="px-3 py-2.5 font-semibold text-blue-800 truncate max-w-[180px]" title="${escapeHtml(item.kasb)}">
+            <td class="px-3 py-2.5">${testBadge}</td>
+            <td class="px-3 py-2.5 font-bold text-emerald-900 truncate max-w-[220px]" title="${escapeHtml(item.asosiy_natija)}">
+                ${escapeHtml(item.asosiy_natija) || '-'}
+            </td>
+            <td class="px-3 py-2.5 text-gray-600 truncate max-w-[240px]" title="${escapeHtml(item.tavsiya)}">
+                ${escapeHtml(item.tavsiya) || '-'}
+            </td>
+            <td class="px-3 py-2.5 font-semibold text-blue-800 truncate max-w-[170px]" title="${escapeHtml(item.kasb)}">
                 ${escapeHtml(item.kasb) || '-'}
             </td>
-            <td class="px-3 py-2.5 text-gray-600 truncate max-w-[220px]" title="${escapeHtml(item.startap)}">${escapeHtml(item.startap) || '-'}</td>
-            <td class="px-3 py-2.5 text-emerald-800 font-semibold truncate max-w-[240px]" title="${escapeHtml(item.yangi_togaraklar)}">${escapeHtml(item.yangi_togaraklar) || '-'}</td>
-            <td class="px-3 py-2.5 text-gray-600 truncate max-w-[220px]" title="${escapeHtml(item.takliflar)}">${escapeHtml(item.takliflar) || '-'}</td>
+            <td class="px-3 py-2.5 text-gray-700 truncate max-w-[200px]" title="${escapeHtml(item.fanlar)}">${escapeHtml(item.fanlar) || '-'}</td>
+            <td class="px-3 py-2.5 text-gray-700 truncate max-w-[180px]" title="${escapeHtml(item.togaraklar)}">${escapeHtml(item.togaraklar) || '-'}</td>
+            <td class="px-3 py-2.5 text-gray-600 truncate max-w-[180px]" title="${escapeHtml(item.takliflar)}">${escapeHtml(item.takliflar) || '-'}</td>
             <td class="px-2 py-2.5 text-center sticky right-0 bg-white border-l border-gray-200 shadow-sm">
                 <div class="flex items-center justify-center space-x-1">
-                    <button onclick="viewEntry(${item.id})" class="p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors" title="Batafsil">
+                    <button onclick="viewEntry(${item.id})" class="p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors" title="Batafsil psixologik karta">
                         <i data-lucide="eye" class="w-4 h-4"></i>
                     </button>
                     <button onclick="editEntry(${item.id})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Tahrirlash">
@@ -266,20 +256,6 @@ function closeEntryModal() {
     document.getElementById('entryModal').classList.add('hidden');
 }
 
-function appendTag(inputId, text) {
-    const input = document.getElementById(inputId);
-    if (!input) return;
-    let current = input.value.trim();
-    if (!current) {
-        input.value = text;
-    } else {
-        const items = current.split(',').map(s => s.trim());
-        if (!items.includes(text)) {
-            input.value = current + ', ' + text;
-        }
-    }
-}
-
 async function saveEntry(e) {
     e.preventDefault();
     const id = document.getElementById('entryId').value;
@@ -288,12 +264,12 @@ async function saveEntry(e) {
         fish: document.getElementById('inputFish').value.trim(),
         sinf: document.getElementById('inputSinf').value.trim(),
         til: document.getElementById('inputTil').value,
+        test_turi: document.getElementById('inputTestTuri').value,
+        asosiy_natija: document.getElementById('inputAsosiyNatija').value.trim(),
+        tavsiya: document.getElementById('inputTavsiya').value.trim(),
+        kasb: document.getElementById('inputKasb').value.trim(),
         fanlar: document.getElementById('inputFanlar').value.trim(),
         togaraklar: document.getElementById('inputTogaraklar').value.trim(),
-        iqtidor: document.getElementById('inputIqtidor').value.trim(),
-        kasb: document.getElementById('inputKasb').value.trim(),
-        startap: document.getElementById('inputStartap').value.trim(),
-        yangi_togaraklar: document.getElementById('inputYangiTogaraklar').value.trim(),
         takliflar: document.getElementById('inputTakliflar').value.trim()
     };
 
@@ -336,12 +312,12 @@ async function editEntry(id) {
             document.getElementById('inputFish').value = data.fish;
             document.getElementById('inputSinf').value = data.sinf;
             document.getElementById('inputTil').value = data.til;
+            document.getElementById('inputTestTuri').value = data.test_turi || '5-6-sinf';
+            document.getElementById('inputAsosiyNatija').value = data.asosiy_natija || '';
+            document.getElementById('inputTavsiya').value = data.tavsiya || '';
+            document.getElementById('inputKasb').value = data.kasb || '';
             document.getElementById('inputFanlar').value = data.fanlar || '';
             document.getElementById('inputTogaraklar').value = data.togaraklar || '';
-            document.getElementById('inputIqtidor').value = data.iqtidor || '';
-            document.getElementById('inputKasb').value = data.kasb || '';
-            document.getElementById('inputStartap').value = data.startap || '';
-            document.getElementById('inputYangiTogaraklar').value = data.yangi_togaraklar || '';
             document.getElementById('inputTakliflar').value = data.takliflar || '';
 
             document.getElementById('modalTitle').textContent = `Tahrirlash: ${data.fish}`;
@@ -390,12 +366,61 @@ async function viewEntry(id) {
             document.getElementById('viewKasb').textContent = data.kasb || '-';
             document.getElementById('viewFanlar').textContent = data.fanlar || '-';
             document.getElementById('viewTogaraklar').textContent = data.togaraklar || '-';
-            document.getElementById('viewIqtidor').textContent = data.iqtidor || '-';
-            document.getElementById('viewStartap').textContent = data.startap || '-';
-            document.getElementById('viewYangiTogaraklar').textContent = data.yangi_togaraklar || '-';
             document.getElementById('viewTakliflar').textContent = data.takliflar || '-';
 
+            document.getElementById('viewAsosiyNatija').textContent = data.asosiy_natija || '-';
+            document.getElementById('viewTavsiya').textContent = data.tavsiya || '-';
+
+            const badgeEl = document.getElementById('viewTestTuriBadge');
+            if (badgeEl) {
+                badgeEl.textContent = data.test_turi || 'Test';
+            }
+
+            // Score bars if ballar_json is available
+            const scoreContainer = document.getElementById('viewScoreBarsContainer');
+            const scoreBars = document.getElementById('viewScoreBars');
+            scoreBars.innerHTML = '';
+
+            let parsedScores = null;
+            if (data.ballar_json) {
+                try {
+                    parsedScores = typeof data.ballar_json === 'string' ? JSON.parse(data.ballar_json) : data.ballar_json;
+                } catch (e) {}
+            }
+
+            if (parsedScores && typeof parsedScores === 'object' && Object.keys(parsedScores).length > 0) {
+                let hasNumericBars = false;
+                Object.values(parsedScores).forEach(sc => {
+                    if (sc && typeof sc === 'object' && typeof sc.score === 'number') {
+                        hasNumericBars = true;
+                        const maxVal = sc.max || 5;
+                        const percent = sc.percent || Math.round((sc.score / maxVal) * 100);
+                        const color = percent >= 80 ? 'bg-emerald-600' : percent >= 50 ? 'bg-teal-500' : 'bg-slate-400';
+                        scoreBars.innerHTML += `
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-gray-700 mb-0.5">
+                                    <span>${sc.name}</span>
+                                    <span class="font-mono">${sc.score} / ${maxVal} (${percent}%)</span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                    <div class="${color} h-full rounded-full" style="width: ${percent}%;"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                if (hasNumericBars) {
+                    scoreContainer.classList.remove('hidden');
+                } else {
+                    scoreContainer.classList.add('hidden');
+                }
+            } else {
+                scoreContainer.classList.add('hidden');
+            }
+
             document.getElementById('viewModal').classList.remove('hidden');
+            lucide.createIcons();
         }
     } catch (err) {
         showToast("Ma'lumotni ochib bo'lmadi", "error");
@@ -437,7 +462,6 @@ function toggleExportMenu() {
     menu.classList.toggle('hidden');
 }
 
-// Close export menu when clicking outside
 window.addEventListener('click', (e) => {
     if (!e.target.closest('.dropdown')) {
         document.getElementById('exportMenu')?.classList.add('hidden');
@@ -451,18 +475,19 @@ function clientExcelExport() {
     }
 
     const exportData = currentEntries.map(r => ({
+        "№": r.id,
         "Sana va vaqt": r.timestamp,
         "Fingerprint": r.fingerprint,
         "Til": r.til,
         "F.I.Sh.": r.fish,
         "Sinf": r.sinf,
-        "Qiziqadigan fanlar": r.fanlar,
-        "Togaraklar": r.togaraklar,
-        "Iqtidor sohasi": r.iqtidor,
+        "Test turi": r.test_turi,
+        "Asosiy natija / Tashxis": r.asosiy_natija,
+        "Psixologik tavsiya": r.tavsiya,
         "Kelajak kasbi": r.kasb,
-        "Startap loyihasi": r.startap,
-        "Yangi togaraklar taklifi": r.yangi_togaraklar,
-        "Qoshimcha takliflar": r.takliflar
+        "Qiziqadigan fanlar": r.fanlar,
+        "To'garaklar": r.togaraklar,
+        "Takliflar": r.takliflar
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);

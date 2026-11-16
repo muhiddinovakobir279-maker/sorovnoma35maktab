@@ -186,15 +186,16 @@
         <!-- Section 5: Student Roster Summary Table -->
         <div class="mb-8">
             <h4 class="text-xs font-black uppercase text-slate-800 tracking-wider mb-2 pb-1 border-b-2 border-slate-900">
-                5. Sinf O'quvchilari Qisqacha Ro'yxati va To'garak Bandligi
+                5. Sinf O'quvchilari Qisqacha Ro'yxati, Diagnostikasi va Kasbiy Yo'nalishi
             </h4>
             <table class="w-full text-left border-collapse text-[11px]">
                 <thead>
                     <tr class="bg-slate-100 border-b border-slate-300 font-extrabold text-slate-700 uppercase">
                         <th class="py-1.5 px-2 text-center w-8">#</th>
                         <th class="py-1.5 px-3">F.I.Sh.</th>
-                        <th class="py-1.5 px-3">Hozirgi To'garaklar</th>
+                        <th class="py-1.5 px-3">Asosiy Tashxis / Qobiliyat</th>
                         <th class="py-1.5 px-3">Kelajak Kasbi</th>
+                        <th class="py-1.5 px-3">To'garaklar</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200">
@@ -202,6 +203,8 @@
                     <tr class="{% if loop.index % 2 == 0 %}bg-slate-50/60{% endif %}">
                         <td class="py-1.5 px-2 text-center font-mono text-slate-400">{{ loop.index }}</td>
                         <td class="py-1.5 px-3 font-bold text-slate-900">{{ s.fish }}</td>
+                        <td class="py-1.5 px-3 font-extrabold text-emerald-800">{{ s.asosiy_natija or s.iqtidor or '-' }}</td>
+                        <td class="py-1.5 px-3 font-semibold text-blue-800">{{ s.kasb or '-' }}</td>
                         <td class="py-1.5 px-3 text-slate-700">
                             {% if not s.togaraklar or 'bormayman' in s.togaraklar.lower() or 'yoq' in s.togaraklar.lower() %}
                             <span class="font-bold text-rose-600">To'garakka bormaydi</span>
@@ -209,7 +212,6 @@
                             {{ s.togaraklar }}
                             {% endif %}
                         </td>
-                        <td class="py-1.5 px-3 font-semibold text-blue-800">{{ s.kasb or '-' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
