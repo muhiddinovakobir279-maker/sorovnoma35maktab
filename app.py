@@ -287,6 +287,13 @@ def sync_from_cloud():
         print(f"Cloud sync insert error: {e}")
         return 0
 
+try:
+    _c_init = sync_from_cloud()
+    if _c_init:
+        print(f"Baza muvaffaqiyatli sinxronlandi: +{_c_init} ta yozuv.")
+except Exception as _startup_sync_err:
+    print(f"Startup sync notice: {_startup_sync_err}")
+
 def sync_from_google_sheet():
     if not GOOGLE_SHEET_CSV_URL:
         return 0
