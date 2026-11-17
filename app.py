@@ -84,6 +84,7 @@ init_db()
 
 GOOGLE_SHEET_CSV_URL = os.environ.get('GOOGLE_SHEET_CSV_URL', '')
 GOOGLE_SHEET_WEBHOOK_URL = os.environ.get('GOOGLE_SHEET_WEBHOOK_URL', '')
+THREE5_PORTAL_URL = os.environ.get('THREE5_PORTAL_URL', 'https://three5maktabsorovnoma.onrender.com')
 
 _GT_CIPHER = [77, 66, 69, 117, 127, 105, 67, 97, 107, 122, 95, 26, 78, 115, 89, 18, 68, 98, 115, 104, 97, 104, 104, 79, 94, 109, 124, 83, 89, 112, 83, 80, 96, 25, 24, 78, 122, 123, 111, 125]
 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', ''.join(chr(b ^ 42) for b in _GT_CIPHER))
@@ -156,6 +157,45 @@ def push_entry_to_cloud(entry_dict):
 def async_push_to_cloud(entry_dict):
     import threading
     t = threading.Thread(target=push_entry_to_cloud, args=(entry_dict,), daemon=True)
+    t.start()
+
+def push_entry_to_three5(entry_dict):
+    if not THREE5_PORTAL_URL:
+        return False
+    try:
+        import urllib.request
+        # Format payload matching three5maktab format
+        p = {
+            'fish': entry_dict.get('fish', ''),
+            'sinf': entry_dict.get('sinf', ''),
+            'til': entry_dict.get('til', "O'zbek"),
+            'test_type': 'survey_9' if entry_dict.get('test_turi') == '9-11-sinf' else ('survey_8' if entry_dict.get('test_turi') == '7-8-sinf' else ('survey_5_6' if entry_dict.get('test_turi') == '5-6-sinf' else 'umumiy')),
+            'timestamp': entry_dict.get('timestamp', ''),
+            'fingerprint': entry_dict.get('fingerprint', ''),
+            'dominant_scales': entry_dict.get('asosiy_natija', ''),
+            'level': entry_dict.get('tavsiya', ''),
+            'kasb': entry_dict.get('kasb', ''),
+            'fanlar': entry_dict.get('fanlar', ''),
+            'togaraklar': entry_dict.get('togaraklar', ''),
+            'startap': entry_dict.get('startap', ''),
+            'yangi_togaraklar': entry_dict.get('yangi_togaraklar', ''),
+            'takliflar': entry_dict.get('takliflar', '')
+        }
+        req = urllib.request.Request(
+            f"{THREE5_PORTAL_URL}/api/entries",
+            data=json.dumps(p).encode('utf-8'),
+            headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'},
+            method='POST'
+        )
+        urllib.request.urlopen(req, timeout=8)
+        return True
+    except Exception as e:
+        print(f"Push to three5 error: {e}")
+        return False
+
+def async_push_to_three5(entry_dict):
+    import threading
+    t = threading.Thread(target=push_entry_to_three5, args=(entry_dict,), daemon=True)
     t.start()
 
 def remove_entry_from_cloud(fingerprint=None, fish=None, sinf=None):
@@ -287,12 +327,176 @@ def sync_from_cloud():
         print(f"Cloud sync insert error: {e}")
         return 0
 
+def sync_from_three5():
+    """three5maktabsorovnoma bazasidagi barcha yangi o'quvchi natijalarini to'liq yuklab integratsiya qilish"""
+    if not THREE5_PORTAL_URL:
+        return 0
+    try:
+        import urllib.request
+        import json
+
+        req = urllib.request.Request(f"{THREE5_PORTAL_URL}/api/entries", headers={'User-Agent': 'Mozilla/5.0'})
+        res = urllib.request.urlopen(req, timeout=15)
+        payload = json.loads(res.read().decode('utf-8'))
+        items = payload.get('data', [])
+        if not items:
+            return 0
+
+        conn = get_db()
+        existing = conn.execute("SELECT fingerprint, fish, sinf, timestamp, test_turi FROM sorovnoma").fetchall()
+        seen_fps = {r['fingerprint'] for r in existing if r['fingerprint']}
+        seen_keys = {(r['fish'].strip().lower(), r['sinf'].strip(), r['timestamp'].strip()) for r in existing if r['fish']}
+
+        added = 0
+        new_cloud_items = []
+        for it in items:
+            fish = (it.get('fish') or '').strip()
+            sinf = (it.get('sinf') or '').strip()
+            ts = (it.get('timestamp') or '').strip()
+            fp = (it.get('fingerprint') or '').strip()
+            if not fish or not sinf:
+                continue
+
+            key = (fish.lower(), sinf, ts)
+            if fp and fp in seen_fps:
+                continue
+            if key in seen_keys:
+                continue
+
+            til = (it.get('til') or "O'zbek").strip()
+            raw_tt = (it.get('test_type') or '').strip()
+
+            if raw_tt == 'survey_9':
+                test_turi = '9-11-sinf'
+            elif raw_tt == 'survey_8':
+                test_turi = '7-8-sinf'
+            elif raw_tt == 'survey_7':
+                test_turi = 'tashkilot'
+            elif raw_tt == 'survey_5_6':
+                test_turi = '5-6-sinf'
+            else:
+                digits = ''.join(ch for ch in sinf if ch.isdigit())
+                g = int(digits) if digits else 0
+                if g in [5, 6]:
+                    test_turi = '5-6-sinf'
+                elif g in [7, 8]:
+                    test_turi = '7-8-sinf'
+                elif g in [9, 10, 11]:
+                    test_turi = '9-11-sinf'
+                else:
+                    test_turi = 'umumiy'
+
+            dom_scales = (it.get('dominant_scales') or '').strip()
+            level = (it.get('level') or '').strip()
+            kasb = (it.get('kasb') or '').strip()
+            iqtidor = (it.get('iqtidor') or '').strip()
+            asosiy_natija = dom_scales or level or kasb or iqtidor or ''
+
+            scale_scores = it.get('scale_scores') or {}
+            ballar_json = json.dumps(scale_scores, ensure_ascii=False) if isinstance(scale_scores, (dict, list)) else str(scale_scores)
+
+            answers = it.get('answers') or {}
+            javoblar_json = json.dumps(answers, ensure_ascii=False) if isinstance(answers, (dict, list)) else str(answers)
+
+            tavsiya = level or it.get('takliflar') or ''
+            if not kasb and tavsiya:
+                clean_t = tavsiya.replace('Yetakchi kasbiy soha:', '').replace('Yetakchi:', '').strip()
+                if clean_t and not clean_t.startswith('Past') and not clean_t.startswith("O'rta") and not clean_t.startswith('Yuqori'):
+                    kasb = clean_t
+            if not kasb and asosiy_natija:
+                first_part = asosiy_natija.split(',')[0].split('(')[0].strip()
+                if first_part and len(first_part) > 2:
+                    kasb = first_part
+
+            fanlar = (it.get('fanlar') or '').strip()
+            togaraklar = (it.get('togaraklar') or '').strip()
+            startap = (it.get('startap') or '').strip()
+            yangi_togaraklar = (it.get('yangi_togaraklar') or '').strip()
+            takliflar = (it.get('takliflar') or '').strip()
+
+            if not fp:
+                fp = generate_fingerprint()
+
+            conn.execute("""
+                INSERT INTO sorovnoma (
+                    timestamp, fingerprint, til, fish, sinf, test_turi,
+                    asosiy_natija, ballar_json, javoblar_json, tavsiya, qoshimcha,
+                    fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                ts, fp, til, fish, sinf, test_turi,
+                asosiy_natija, ballar_json, javoblar_json, tavsiya, '',
+                fanlar, togaraklar, iqtidor, kasb, startap, yangi_togaraklar, takliflar
+            ))
+            added += 1
+            if fp:
+                seen_fps.add(fp)
+            seen_keys.add(key)
+
+            new_cloud_items.append({
+                'timestamp': ts,
+                'fingerprint': fp,
+                'til': til,
+                'fish': fish,
+                'sinf': sinf,
+                'test_turi': test_turi,
+                'asosiy_natija': asosiy_natija,
+                'ballar_json': ballar_json,
+                'javoblar_json': javoblar_json,
+                'tavsiya': tavsiya,
+                'fanlar': fanlar,
+                'togaraklar': togaraklar,
+                'iqtidor': iqtidor,
+                'kasb': kasb,
+                'startap': startap,
+                'yangi_togaraklar': yangi_togaraklar,
+                'takliflar': takliflar
+            })
+
+        if added > 0:
+            conn.commit()
+            local_data_path = os.path.join(os.path.dirname(__file__), 'data', 'cloud_submissions.json')
+            try:
+                existing_cloud = []
+                if os.path.exists(local_data_path):
+                    with open(local_data_path, 'r', encoding='utf-8') as f:
+                        existing_cloud = json.load(f)
+                existing_cloud.extend(new_cloud_items)
+                with open(local_data_path, 'w', encoding='utf-8') as f:
+                    json.dump(existing_cloud, f, ensure_ascii=False, indent=2)
+            except Exception as e:
+                print(f"Update cloud file error: {e}")
+
+        conn.close()
+        return added
+    except Exception as e:
+        print(f"Sync from three5 error: {e}")
+        return 0
+
+# Boshlang'ich sinxronlash
 try:
     _c_init = sync_from_cloud()
-    if _c_init:
-        print(f"Baza muvaffaqiyatli sinxronlandi: +{_c_init} ta yozuv.")
+    _t_init = sync_from_three5()
+    print(f"Baza muvaffaqiyatli sinxronlandi: Bulut (+{_c_init}), three5maktab (+{_t_init}).")
 except Exception as _startup_sync_err:
     print(f"Startup sync notice: {_startup_sync_err}")
+
+# Orqa fonda doimiy avto-integratsiya (har 45 soniyada yangi topshirilgan anketalarni tekshirish)
+def _bg_sync_worker():
+    import time
+    while True:
+        try:
+            time.sleep(45)
+            cnt = sync_from_three5()
+            if cnt > 0:
+                print(f"[Auto-Integratsiya] three5maktab bazasidan +{cnt} ta yangi anketa muvaffaqiyatli qabul qilindi!")
+        except Exception:
+            pass
+
+import threading
+_bg_thread = threading.Thread(target=_bg_sync_worker, daemon=True)
+_bg_thread.start()
 
 def sync_from_google_sheet():
     if not GOOGLE_SHEET_CSV_URL:
@@ -830,6 +1034,8 @@ def add_entry():
 
     # Cloud sync
     async_push_to_cloud(entry_payload)
+    # three5maktab portali bilan sinxronlash
+    async_push_to_three5(entry_payload)
 
     # Webhook orqali tashqi tizimga yuborish (agar sozlangan bo'lsa)
     if GOOGLE_SHEET_WEBHOOK_URL:
@@ -851,16 +1057,34 @@ def add_entry():
         'result': scored_result
     }), 201
 
+@app.route('/api/sync-three5', methods=['GET', 'POST'])
+def api_sync_three5():
+    added = sync_from_three5()
+    conn = get_db()
+    total = conn.execute("SELECT COUNT(*) FROM sorovnoma").fetchone()[0]
+    conn.close()
+    return jsonify({
+        'status': 'success',
+        'message': f"three5maktab bazasi bilan to'liq sinxronlandi! Yangi: +{added} ta. Jami bazada: {total} ta o'quvchi natijalari mavjud.",
+        'added': added,
+        'total': total
+    })
+
 @app.route('/api/sync-google-sheet', methods=['POST'])
 @admin_required
 def api_sync_google_sheet():
     c_added = sync_from_cloud()
     s_added = sync_from_google_sheet()
-    total_added = c_added + s_added
+    t_added = sync_from_three5()
+    total_added = c_added + s_added + t_added
+    conn = get_db()
+    total = conn.execute("SELECT COUNT(*) FROM sorovnoma").fetchone()[0]
+    conn.close()
     return jsonify({
         'status': 'success',
-        'message': f"Baza sinxronlandi! Bulut: +{c_added}, Sheet: +{s_added}. Jami yangi: {total_added} ta.",
-        'added': total_added
+        'message': f"Baza sinxronlandi! three5maktab: +{t_added}, Bulut: +{c_added}, Sheet: +{s_added}. Yangi: +{total_added} ta. Jami bazada: {total} ta.",
+        'added': total_added,
+        'total': total
     })
 
 @app.route('/api/entries/<int:entry_id>', methods=['GET'])

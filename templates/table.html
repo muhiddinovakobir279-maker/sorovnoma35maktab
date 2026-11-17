@@ -56,6 +56,11 @@
 
             <!-- Toolbar Buttons -->
             <div class="flex flex-wrap items-center gap-2">
+                <button onclick="syncThree5()" id="btnSyncThree5" class="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md shadow-emerald-600/20 flex items-center space-x-1.5 transition-all" title="three5maktabsorovnoma bazasidagi barcha yangi o'quvchi natijalarini to'liq sinxronlash">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    <span>three5maktab Baza Sinxronlash</span>
+                </button>
+
                 <button onclick="openAddModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-md shadow-emerald-600/20 flex items-center space-x-1.5 transition-all">
                     <i data-lucide="plus-circle" class="w-4 h-4"></i>
                     <span>Yangi qator qo'shish</span>
@@ -437,5 +442,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/main.js?v=20261116_1000"></script>
+<script src="/static/js/main.js?v=20261117_1100"></script>
 {% endblock %}

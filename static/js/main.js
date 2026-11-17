@@ -503,6 +503,33 @@ function copyToClipboard(text) {
     });
 }
 
+async function syncThree5() {
+    const btn = document.getElementById('btnSyncThree5');
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add('opacity-75');
+    }
+    showToast("three5maktab bazasi bilan sinxronlanmoqda...", "info");
+    try {
+        const res = await fetch('/api/sync-three5');
+        const data = await res.json();
+        if (data.status === 'success') {
+            showToast(data.message, "success");
+            await loadEntries();
+        } else {
+            showToast(data.message || "Sinxronlashda xatolik yuz berdi", "error");
+        }
+    } catch (err) {
+        console.error("Sync error:", err);
+        showToast("three5maktab serveriga ulanishda xatolik", "error");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove('opacity-75');
+        }
+    }
+}
+
 function escapeHtml(str) {
     if (!str) return '';
     return String(str)
